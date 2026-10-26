@@ -1,0 +1,2767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<title>Zacky's Water Adventure!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    overflow: hidden;
+    font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw; height: 100vh;
+  }
+
+  /* ─── GAME CANVAS: always 1920×1080, scaled to fit any screen ─── */
+  #game-canvas {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: center center;
+    background: #001a33;
+    flex-shrink: 0;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen {
+    width: 100%; height: 100%;
+    position: absolute;
+    display: none; opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    background-size: cover;
+    background-position: center;
+  }
+  .screen.active { display: block; opacity: 1; }
+  #start.active  { display: flex; }
+
+  /* ─── START SCREEN ─── */
+  #start {
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, #005f8f 0%, #002244 40%, #000e1a 100%);
+    overflow: hidden;
+  }
+  #start .bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  #start .bubbles span {
+    position: absolute; bottom: -80px; border-radius: 50%;
+    background: rgba(100,220,255,0.15); border: 2px solid rgba(100,220,255,0.3);
+    animation: rise linear infinite;
+  }
+  @keyframes rise { to { transform: translateY(-1188px); opacity: 0; } }
+  #start .wave-layer {
+    position: absolute; bottom: 0; left: 0; width: 200%; height: 180px;
+    animation: waveMove 6s linear infinite;
+  }
+  @keyframes waveMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  #start-logo {
+    width: 380px; max-width: 1344px;
+    filter: drop-shadow(0 8px 30px rgba(0,180,255,0.6));
+    animation: floatLogo 3s ease-in-out infinite;
+    position: relative; z-index: 2;
+  }
+  @keyframes floatLogo {
+    0%,100% { transform: translateY(0px); } 50% { transform: translateY(-18px); }
+  }
+  #start h1 {
+    color: #a0efff; font-size: 2.8em;
+    text-shadow: 0 0 20px rgba(0,200,255,0.8), 2px 2px 6px #001133;
+    margin-top: 20px; letter-spacing: 2px; position: relative; z-index: 2;
+  }
+  #start p {
+    color: #cff8ff; font-size: 1.4em; margin-top: 12px;
+    animation: blink 1.4s ease-in-out infinite;
+    position: relative; z-index: 2; text-shadow: 1px 1px 4px #001133;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ─── VIDEO ─── */
+  #video-container {
+    position: absolute; inset: 0; background: #000;
+    display: none; z-index: 1000; justify-content: center; align-items: center;
+  }
+  #video-container.visible { display: flex; }
+  #scene-video { width: 100%; height: 100%; object-fit: contain; }
+
+  /* ─── STAGE BACKGROUNDS ─── */
+  #landing   { background-image: url('background1_landing.jpg'); }
+  #waterpark { background-image: url('background2_waterpark.jpg'); }
+  #beach     { background-image: url('background3_beach.jpg'); }
+  #dock      { background-image: url('background4_dock.jpg'); }
+  #ocean     { background-image: url('background5_ocean.jpg'); }
+  #battle    { background-image: url('background6_battle.jpg'); }
+
+  /* ─── SHARED ─── */
+  .prop { position: absolute; z-index: 4; }
+
+  /* ─── KEY PROMPT (large flashing key + label) ─── */
+  .key-prompt {
+    position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%); z-index: 20;
+    display: none; flex-direction: column; align-items: center;
+    gap: 6px; pointer-events: none;
+  }
+  .key-prompt.visible { display: flex; }
+  .key-prompt img {
+    width: 220px;
+    animation: keyPulse 1.4s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
+  }
+  .key-prompt span {
+    color: #fff; font-size: 1.8em;
+    text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
+  }
+  @keyframes keyPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.25; transform: scale(0.88); }
+  }
+
+  /* ─── ARROW HINT (bobbing directional key) ─── */
+  .arrow-hint {
+    position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%); z-index: 20;
+    display: none; flex-direction: column; align-items: center;
+    gap: 6px; pointer-events: none;
+  }
+  .arrow-hint.visible { display: flex; }
+  .arrow-hint img {
+    width: 140px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
+    animation: arrowBob 0.9s ease-in-out infinite;
+  }
+  .arrow-hint span {
+    color: #fff; font-size: 1.6em;
+    text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
+  }
+  @keyframes arrowBob   { 0%,100% { transform: translateX(0);  } 50% { transform: translateX(10px);  } }
+  .up-hint   img { animation: arrowBobUp   0.9s ease-in-out infinite; }
+  .left-hint img { animation: arrowBobLeft 0.9s ease-in-out infinite; }
+  .down-hint img { animation: arrowBobDown 0.9s ease-in-out infinite; }
+  @keyframes arrowBobUp   { 0%,100% { transform: translateY(0);   } 50% { transform: translateY(-10px); } }
+  @keyframes arrowBobLeft { 0%,100% { transform: translateX(0);   } 50% { transform: translateX(-10px); } }
+  @keyframes arrowBobDown { 0%,100% { transform: translateY(0);   } 50% { transform: translateY(10px);  } }
+
+  /* ─── LANDING ELEMENTS ─── */
+  #ship-smoke { position: absolute; z-index: 4; width: 220px; transition: opacity 0.5s; }
+  #zacky-ship { position: absolute; width: 220px; left: 8%; z-index: 2; transition: bottom 4s cubic-bezier(0.25,0.8,0.35,1); }
+  #zacky-land { position: absolute; width: 160px; z-index: 5; transition: left 0.35s ease; }
+  #fallen-tree { position: absolute; width: 300px; z-index: 4; }
+  #birds-gif {
+    position: absolute; top: 3%; left: -15%; width: 90px; z-index: 6;
+    display: none;
+  }
+
+  /* ─── WATER PARK ELEMENTS ─── */
+  #waterslide { position: absolute; right: 5%; bottom: 5%; height: 886px; width: auto; z-index: 4; }
+  #zacky-park { position: absolute; width: 160px; z-index: 5; transition: left 0.35s ease, bottom 0.38s ease; }
+
+  /* ─── BEACH ELEMENTS ─── */
+  #beach-tower {
+    position: absolute;
+    left: 8%; bottom: 5%;
+    height: 1080px; width: auto; z-index: 4;
+  }
+  #sandcastle {
+    position: absolute;
+    left: 44%; bottom: 10%;
+    height: 238px; width: auto; z-index: 4;
+  }
+  #beach-terminal {
+    position: absolute;
+    left: 72%; bottom: 10%;
+    height: 410px; width: auto; z-index: 4;
+  }
+  #shovel-item {
+    position: absolute;
+    /* positioned top-right of tower — JS will fine-tune */
+    z-index: 8;
+    width: 70px;
+    display: none;
+    animation: shovelFloat 1.8s ease-in-out infinite;
+  }
+  @keyframes shovelFloat {
+    0%,100% { transform: translateY(0);    }
+    50%      { transform: translateY(-10px); }
+  }
+  #zacky-beach {
+    position: absolute;
+    width: 160px; z-index: 5;
+    transition: left 0.35s ease, bottom 0.4s ease;
+  }
+
+  /* ─── DOCK ELEMENTS ─── */
+  #dock-vehicle {
+    position: absolute;
+    left: 50%; bottom: 2%;
+    transform: translateX(-50%);
+    height: 302px; width: auto; z-index: 4;
+  }
+  #zacky-dock {
+    position: absolute;
+    width: 160px; z-index: 5;
+    transition: left 0.35s ease, bottom 0.4s ease;
+  }
+
+  /* ─── OCEAN ELEMENTS ─── */
+  #ocean-sub {
+    position: absolute;
+    height: 297px; width: auto; z-index: 5;
+    transition: left 1.8s cubic-bezier(0.25,0.8,0.35,1),
+                bottom 0.6s cubic-bezier(0.25,0.8,0.35,1);
+  }
+  .ocean-obj {
+    position: absolute;
+    height: 130px; width: auto; z-index: 4;
+    display: none;
+    transition: left 10s linear;
+  }
+
+  /* ─── BATTLE ELEMENTS ─── */
+  #battle-sub {
+    position: absolute;
+    left: 5%; bottom: 15%;
+    height: 292px; width: auto; z-index: 5;
+    transition: left 1.8s cubic-bezier(0.25,0.8,0.35,1);
+  }
+  #battle-skye {
+    position: absolute;
+    right: 3%; top: 5%;
+    height: 194px; width: auto; z-index: 4;
+    animation: skyeFloat 2.4s ease-in-out infinite;
+  }
+  @keyframes skyeFloat {
+    0%,100% { transform: translateY(0);    }
+    50%      { transform: translateY(-8px); }
+  }
+  #skye-speech {
+    position: absolute;
+    right: 10%; top: 8%;
+    width: 730px; height: auto;
+    z-index: 20; display: none; opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  #battle-monster {
+    position: absolute;
+    bottom: 15%;
+    height: 281px; width: auto; z-index: 4;
+    transition: left 0.15s linear, filter 0.1s, bottom 0.25s ease-out;
+  }
+  #battle-boss {
+    position: absolute;
+    bottom: 10%;
+    height: 540px; width: auto; z-index: 4;
+    display: none;
+  }
+  .btl-torpedo {
+    position: absolute;
+    height: 108px; width: auto; z-index: 6;
+    pointer-events: none;
+  }
+  #nuke-explosion {
+    position: absolute;
+    display: none;
+    z-index: 10;
+    pointer-events: none;
+  }
+  @keyframes monsterHit {
+    0%   { filter: brightness(1) saturate(1); transform: translateX(0); }
+    20%  { filter: brightness(2) saturate(5) hue-rotate(-30deg); transform: translateX(-8px); }
+    40%  { filter: brightness(2) saturate(5) hue-rotate(-30deg); transform: translateX(8px); }
+    60%  { filter: brightness(2) saturate(5) hue-rotate(-30deg); transform: translateX(-6px); }
+    80%  { filter: brightness(2) saturate(5) hue-rotate(-30deg); transform: translateX(4px); }
+    100% { filter: brightness(1) saturate(1); transform: translateX(0); }
+  }
+  .monster-hit { animation: monsterHit 0.6s ease-in-out forwards; }
+  @keyframes nukeExpand {
+    0%   { transform: translateX(-50%) scale(0);   opacity: 1; }
+    60%  { transform: translateX(-50%) scale(1.4); opacity: 1; }
+    100% { transform: translateX(-50%) scale(2);   opacity: 0; }
+  }
+  .nuke-expand { animation: nukeExpand 1.5s ease-out forwards; }
+  @keyframes bossShake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-6px); }
+    40%     { transform: translateX(6px); }
+    60%     { transform: translateX(-4px); }
+    80%     { transform: translateX(4px); }
+  }
+  .boss-shake { animation: bossShake 0.5s ease-in-out infinite; }
+  #battle-enter-prompt {
+    position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%); z-index: 20;
+    display: none; flex-direction: column; align-items: center;
+    gap: 6px; pointer-events: none;
+  }
+  #battle-enter-prompt.visible { display: flex; }
+  #battle-enter-prompt img {
+    width: 220px; animation: keyPulse 1.4s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
+  }
+  #battle-enter-prompt span {
+    color: #fff; font-size: 1.8em;
+    text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
+  }
+
+  /* ─── LANDING EXTRAS ─── */
+  #land-mouse {
+    position: absolute; width: 50px; z-index: 6;
+    bottom: 11%; display: none;
+    transition: left 1.8s ease-in;
+  }
+  #land-rubble {
+    position: absolute; width: 130px; z-index: 4;
+    bottom: 14%;
+  }
+  #rubble-speech {
+    position: absolute;
+    left: 40%; top: 60%;
+    transform: translate(-50%, -50%);
+    width: 730px; height: auto;
+    z-index: 20; display: none; opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  /* ─── WATERPARK EXTRAS ─── */
+  #park-chase {
+    position: absolute; width: 160px; z-index: 4;
+    bottom: 13%;
+  }
+  #chase-speech {
+    position: absolute;
+    left: 40%; top: 60%;
+    transform: translate(-50%, -50%);
+    width: 730px; height: auto;
+    z-index: 20; display: none; opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  /* ─── BEACH EXTRAS ─── */
+  #beach-dock-sign {
+    position: absolute;
+    left: 86%; bottom: 32%;
+    height: 162px; width: auto; z-index: 5;
+  }
+  #ocean-zuma {
+    position: absolute;
+    top: 25%; right: -20%;
+    height: 194px; width: auto;
+    z-index: 6;
+    display: none;
+    transition: right 1.2s cubic-bezier(0.25,0.8,0.35,1);
+  }
+  #zuma-speech {
+    position: absolute;
+    right: 22%; top: 5%;
+    width: 730px; height: auto;
+    z-index: 7; display: none; opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  /* ─── OCEAN BUBBLES ─── */
+  #ocean-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+  #ocean-bubbles span {
+    position: absolute; bottom: -80px; border-radius: 50%;
+    background: rgba(140,230,255,0.18); border: 2px solid rgba(140,230,255,0.35);
+    animation: rise linear infinite;
+  }
+  /* ─── BATTLE BUBBLES ─── */
+  #battle-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+  #battle-bubbles span {
+    position: absolute; bottom: -80px; border-radius: 50%;
+    background: rgba(100,220,255,0.12); border: 2px solid rgba(100,220,255,0.28);
+    animation: rise linear infinite;
+  }
+  /* ─── END SCREEN BUBBLES ─── */
+  #end-bubbles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+  #end-bubbles span {
+    position: absolute; bottom: -80px; border-radius: 50%;
+    background: rgba(100,220,255,0.13); border: 2px solid rgba(100,220,255,0.28);
+    animation: rise linear infinite;
+  }
+
+  /* ─── END SCREEN ─── */
+  #endscreen {
+    display: none;
+    width: 100%; height: 100%;
+    position: absolute;
+    background-image: url('Background_end.jpg');
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+  }
+  #endscreen.active { display: block; }
+  #end-logo {
+    position: absolute; left: 40%; top: 45%;
+    transform: translate(-50%, -50%);
+    width: 320px; max-width: 1056px;
+    filter: drop-shadow(0 8px 30px rgba(0,180,255,0.7));
+    animation: floatLogo 3s ease-in-out infinite;
+    z-index: 5;
+  }
+  #end-pawpatrol {
+    position: absolute; left: 50%; top: 16%;
+    transform: translateX(-50%);
+    height: 281px; width: auto; z-index: 5;
+  }
+  #end-congrats {
+    position: absolute; left: 50%; top: 5%;
+    transform: translateX(-50%);
+    text-align: center; z-index: 6;
+    color: #000; text-shadow: none;
+    pointer-events: none; white-space: nowrap;
+  }
+  #end-congrats h2 {
+    font-size: 2.6em; letter-spacing: 2px; color: #000;
+    animation: blink 2s ease-in-out infinite;
+  }
+  #end-congrats p {
+    font-size: 1.3em; margin-top: 8px; color: #000;
+    animation: blink 2.4s ease-in-out infinite;
+  }
+  #end-mouse {
+    position: absolute; bottom: 8%;
+    height: 151px; width: auto; z-index: 6;
+  }
+
+  /* ─── SCREEN SHAKE ─── */
+  @keyframes screenShake {
+    0%   { transform: translate(0,0); }
+    15%  { transform: translate(-10px,5px); }
+    30%  { transform: translate(10px,-5px); }
+    45%  { transform: translate(-8px,4px); }
+    60%  { transform: translate(8px,-4px); }
+    75%  { transform: translate(-5px,2px); }
+    100% { transform: translate(0,0); }
+  }
+  .shake { animation: screenShake 0.55s ease-in-out; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ AUDIO ═══════════════════════ -->
+<audio id="openMusic"      src="Open_Music.mp3"       loop></audio>
+<audio id="landingMusic"   src="Landing_Music.mp3"    loop></audio>
+<audio id="waterparkMusic" src="Waterpark_music.mp3"  loop></audio>
+<audio id="waterAmbient"   src="Water.mp3"            loop></audio>
+<audio id="beachMusic"     src="Beach_Music.mp3"      loop></audio>
+<audio id="rocketLand"     src="rocket_landing.mp3"></audio>
+<audio id="birdNoise"      src="birds_noise.mp3"      loop></audio>
+<audio id="walkSfx"        src="walking.mp3"></audio>
+<audio id="walkSandSfx"    src="walking_sand.mp3"></audio>
+<audio id="jumpSfx"        src="jump.mp3"></audio>
+<audio id="climbSfx"       src="climbing.mp3"></audio>
+<audio id="collectSfx"     src="collect_item.mp3"></audio>
+<audio id="shovelSandSfx"  src="shovel_sand.mp3"></audio>
+<audio id="blockedSfx"     src="blocked.mp3"></audio>
+<audio id="earthquakeSfx"  src="earthquake.mp3"></audio>
+<audio id="callSfx"        src="Call_incoming.mp3"></audio>
+<audio id="waterSplashSfx"  src="water_splash.mp3"></audio>
+<audio id="oceanMusic"      src="Ocean_music.mp3"       loop></audio>
+<audio id="waterWooshSfx"   src="water_woosh.mp3"></audio>
+<audio id="battleMusic"     src="Battle_Music.mp3"      loop></audio>
+<audio id="smallExplosionSfx" src="small_explosion.mp3"></audio>
+<audio id="deadSfx"          src="dead.mp3"></audio>
+<audio id="nukeExplosionSfx" src="nuke_explosion.mp3"></audio>
+<audio id="torpedoNoiseSfx"  src="torpedo_noise.mp3"   loop></audio>
+<audio id="bossRoarSfx"      src="Monster_Boss_Roar.mp3"></audio>
+<audio id="skyeTalkSfx"      src="Skye_Talk.mp3"></audio>
+<audio id="zumaTalkSfx"      src="Zuma_talk.mp3"></audio>
+<audio id="rubbleTalkSfx"    src="Rubble_talk.mp3"></audio>
+<audio id="chaseTalkSfx"     src="Chase_talk.mp3"></audio>
+<audio id="endMusic"         src="End_Music.mp3"          loop></audio>
+
+<!-- ═══════════════════════ VIDEO ═══════════════════════ -->
+<div id="game-canvas">
+<div id="video-container">
+  <video id="scene-video" playsinline></video>
+</div>
+
+<!-- ════════════════════ START SCREEN ════════════════════ -->
+<div id="start" class="screen">
+  <div class="bubbles" id="bubble-container"></div>
+  <svg class="wave-layer" viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,60 C150,120 350,0 600,60 C850,120 1050,0 1200,60 L1200,120 L0,120 Z" fill="rgba(0,120,200,0.35)"/>
+    <path d="M0,80 C200,20 400,100 600,80 C800,60 1000,120 1200,80 L1200,120 L0,120 Z" fill="rgba(0,80,160,0.25)"/>
+  </svg>
+  <img id="start-logo" src="Zacky_water.png" alt="Zacky">
+  <h1>Zacky's Water Adventure!</h1>
+  <p>Press SPACE to start!</p>
+</div>
+
+<!-- ════════════════════ LANDING STAGE ════════════════════ -->
+<div id="landing" class="screen">
+  <div class="key-prompt" id="land-key-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar">
+    <span id="land-key-label">Exit the ship!</span>
+  </div>
+  <div class="arrow-hint" id="land-arrow-hint">
+    <img src="right_arrow_key.png" alt="Right Arrow">
+    <span>Walk right!</span>
+  </div>
+  <img id="zacky-ship"  src="zacky_landing.png">
+  <img id="ship-smoke"  src="smoke.png">
+  <img id="birds-gif"   src="birds.gif" alt="birds">
+  <img id="fallen-tree" class="prop" src="fallen_tree.png">
+  <img id="land-mouse"  src="mouse.png" alt="Mouse">
+  <img id="land-rubble"   src="Rubble.png"         alt="Rubble">
+  <img id="rubble-speech" src="rubble_speech.png"  alt="Rubble Speech">
+  <img id="zacky-land"  src="Zacky_stand.png"
+       style="display:none; position:absolute; width:160px; z-index:5; transition:left 0.35s ease;">
+</div>
+
+<!-- ════════════════════ WATER PARK STAGE ════════════════════ -->
+<div id="waterpark" class="screen">
+  <div class="key-prompt" id="park-space-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar"><span>Start climbing!</span>
+  </div>
+  <div class="key-prompt" id="park-enter-prompt">
+    <img src="Enter_Key.png" alt="Enter"><span>Go in the slide!</span>
+  </div>
+  <div class="arrow-hint" id="park-walk-hint">
+    <img src="right_arrow_key.png" alt="Right Arrow"><span>Walk to the waterslide!</span>
+  </div>
+  <div class="arrow-hint up-hint" id="park-climb-hint">
+    <img src="up_arrow_key.png" alt="Up Arrow"><span>Climb up!</span>
+  </div>
+  <div class="key-prompt" id="park-chase-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar"><span>Talk to Chase!</span>
+  </div>
+  <img id="waterslide" src="waterslide.png" alt="Waterslide">
+  <img id="park-chase"   src="Chase.png"        alt="Chase">
+  <img id="chase-speech" src="Chase_Speech.png" alt="Chase Speech">
+  <img id="zacky-park"   src="Zacky_stand.png"  alt="Zacky">
+</div>
+
+<!-- ════════════════════ BEACH STAGE ════════════════════ -->
+<div id="beach" class="screen">
+
+  <!-- Key/arrow prompts -->
+  <div class="key-prompt"  id="beach-space-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar">
+    <span id="beach-space-label">Climb up!</span>
+  </div>
+  <div class="arrow-hint"  id="beach-right-hint">
+    <img src="right_arrow_key.png" alt="Right"><span id="beach-right-label">Walk right!</span>
+  </div>
+  <div class="arrow-hint left-hint" id="beach-left-hint">
+    <img src="left_arrow_key.png" alt="Left"><span id="beach-left-label">Walk left to the tower!</span>
+  </div>
+  <div class="arrow-hint up-hint"   id="beach-up-hint">
+    <img src="up_arrow_key.png" alt="Up"><span>Climb up!</span>
+  </div>
+  <div class="arrow-hint down-hint" id="beach-down-hint">
+    <img src="down_arrow_key.png" alt="Down"><span>Climb down!</span>
+  </div>
+
+  <!-- Props (z ordering: tower/castle/terminal behind Zacky) -->
+  <img id="beach-tower"    src="beach_tower.png"   alt="Tower">
+  <img id="sandcastle"     src="sandcastle_1.png"  alt="Sandcastle">
+  <img id="beach-terminal" src="Terminal.png"       alt="Terminal">
+  <img id="beach-dock-sign" src="dock_sign.png" alt="Dock Sign">
+  <img id="shovel-item"    src="shovel_item.png"   alt="Shovel">
+  <img id="zacky-beach"    src="Zacky_stand.png"   alt="Zacky">
+</div>
+
+<!-- ════════════════════ DOCK STAGE ════════════════════ -->
+<div id="dock" class="screen">
+
+  <div class="key-prompt" id="dock-space-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar">
+    <span>Jump!</span>
+  </div>
+  <div class="key-prompt" id="dock-enter-prompt">
+    <img src="Enter_Key.png" alt="Enter">
+    <span>Start Engines to Save Skye!</span>
+  </div>
+
+  <img id="dock-vehicle" src="Water_Vehicle_Unmanned.png" alt="Water Vehicle">
+  <img id="zacky-dock"   src="Zacky_stand.png" alt="Zacky">
+</div>
+
+<!-- ════════════════════ OCEAN STAGE ════════════════════ -->
+<div id="ocean" class="screen">
+
+  <!-- Up/down hint prompts -->
+  <div class="arrow-hint up-hint" id="ocean-up-hint">
+    <img src="up_arrow_key.png" alt="Up"><span>Move up!</span>
+  </div>
+  <div class="arrow-hint down-hint" id="ocean-down-hint">
+    <img src="down_arrow_key.png" alt="Down"><span>Move down!</span>
+  </div>
+
+  <div id="ocean-bubbles"></div>
+  <!-- Submarine (Zacky's vehicle) -->
+  <img id="ocean-sub" src="Zacky_submarine.png" alt="Submarine">
+
+  <!-- Collectible objects (float in from right) -->
+  <img id="ocean-lego"   class="ocean-obj" src="lego_bubble.png"    alt="Lego">
+  <img id="ocean-rugby"  class="ocean-obj" src="rugbyball_bubble.png" alt="Rugby Ball">
+  <img id="ocean-mouse"  class="ocean-obj" src="Scuba_Mouse.png"    alt="Mouse">
+
+  <!-- Zuma appears after third item collected -->
+  <img id="ocean-zuma"   src="Zuma.png"          alt="Zuma">
+  <img id="zuma-speech"  src="zuma_speech.png"   alt="Zuma Speech">
+
+</div>
+
+<!-- ════════════════════ BATTLE STAGE ════════════════════ -->
+<div id="battle" class="screen">
+
+  <!-- Underwater bubbles -->
+  <div id="battle-bubbles"></div>
+
+  <!-- Spacebar shoot prompt (top of screen) -->
+  <div class="key-prompt" id="battle-space-prompt">
+    <img src="Spacebar_Key.png" alt="Spacebar">
+    <span id="battle-space-label">Shoot!</span>
+  </div>
+
+  <!-- Enter-to-nuke prompt (top of screen) -->
+  <div id="battle-enter-prompt">
+    <img src="Enter_Key.png" alt="Enter">
+    <span>Switch to Nuclear Torpedo!</span>
+  </div>
+
+  <!-- Skye floating in the middle -->
+  <img id="battle-skye"    src="Skye_trapped.png"   alt="Skye">
+
+  <!-- Skye speech bubble (shown once sub enters) -->
+  <img id="skye-speech" src="Skye_Speech.png" alt="Skye Speech">
+
+  <!-- Zacky's submarine -->
+  <img id="battle-sub"     src="Zacky_submarine.png" alt="Sub">
+
+  <!-- Current monster (src swapped per wave) -->
+  <img id="battle-monster" src="Sea_Monster_1.png"   alt="Monster">
+
+  <!-- Boss (shown only in boss phase) -->
+  <img id="battle-boss"    src="Sea_Monster_Boss.png" alt="Boss">
+
+  <!-- Nuke explosion overlay (centred on boss) -->
+  <img id="nuke-explosion" src="nuke_explosion.png"  alt="Nuke Explosion">
+
+</div>
+
+<!-- ════════════════════ END SCREEN ════════════════════ -->
+<div id="endscreen">
+  <!-- Underwater bubbles -->
+  <div id="end-bubbles"></div>
+  <div id="end-congrats">
+    <h2>🎉 Congratulations! 🎉</h2>
+    <p>You saved Skye! &nbsp;|&nbsp; Press Enter to play again!</p>
+  </div>
+  <img id="end-pawpatrol" src="PawPatrols.png"     alt="Paw Patrol">
+  <img id="end-logo"      src="Zacky_water.png"   alt="Zacky">
+  <img id="end-mouse"     src="Scuba_Mouse.png"    alt="Mouse">
+</div>
+
+</div><!-- /#game-canvas -->
+
+<!-- ════════════════════════ SCRIPT ════════════════════════ -->
+<script>
+
+(function() {
+  var DESIGN_W = 1920, DESIGN_H = 1080;
+  var canvas = document.getElementById('game-canvas');
+  function resize() {
+    var scaleX = window.innerWidth  / DESIGN_W;
+    var scaleY = window.innerHeight / DESIGN_H;
+    var scale  = Math.min(scaleX, scaleY);
+    canvas.style.transform = 'scale(' + scale + ')';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', function() { setTimeout(resize, 100); });
+})();
+
+/* ═══════════════ BUBBLES ═══════════════ */
+(function() {
+  const c = document.getElementById('bubble-container');
+  for (let i = 0; i < 22; i++) {
+    const b = document.createElement('span');
+    const sz = 20 + Math.random() * 60;
+    b.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;` +
+                      `animation-duration:${6+Math.random()*12}s;animation-delay:${Math.random()*10}s;`;
+    c.appendChild(b);
+  }
+})();
+
+/* ═══════════════ AUDIO ═══════════════ */
+const openMusic      = document.getElementById('openMusic');
+const landingMusic   = document.getElementById('landingMusic');
+const waterparkMusic = document.getElementById('waterparkMusic');
+const waterAmbient   = document.getElementById('waterAmbient');
+const beachMusic     = document.getElementById('beachMusic');
+const rocketLand     = document.getElementById('rocketLand');
+const birdNoise      = document.getElementById('birdNoise');
+const walkSfx        = document.getElementById('walkSfx');
+const walkSandSfx    = document.getElementById('walkSandSfx');
+const jumpSfx        = document.getElementById('jumpSfx');
+const climbSfx       = document.getElementById('climbSfx');
+const collectSfx     = document.getElementById('collectSfx');
+const shovelSandSfx  = document.getElementById('shovelSandSfx');
+const blockedSfx     = document.getElementById('blockedSfx');
+const earthquakeSfx  = document.getElementById('earthquakeSfx');
+const callSfx        = document.getElementById('callSfx');
+const waterSplashSfx = document.getElementById('waterSplashSfx');
+const oceanMusic     = document.getElementById('oceanMusic');
+const waterWooshSfx  = document.getElementById('waterWooshSfx');
+const battleMusic       = document.getElementById('battleMusic');
+const smallExplosionSfx = document.getElementById('smallExplosionSfx');
+const deadSfx           = document.getElementById('deadSfx');
+const nukeExplosionSfx  = document.getElementById('nukeExplosionSfx');
+const torpedoNoiseSfx   = document.getElementById('torpedoNoiseSfx');
+const bossRoarSfx       = document.getElementById('bossRoarSfx');
+const skyeTalkSfx       = document.getElementById('skyeTalkSfx');
+const skyeSpeechImg     = document.getElementById('skye-speech');
+const zumaTalkSfx       = document.getElementById('zumaTalkSfx');
+const oceanZuma         = document.getElementById('ocean-zuma');
+const zumaSpeechImg     = document.getElementById('zuma-speech');
+const rubbleTalkSfx  = document.getElementById('rubbleTalkSfx');
+const chaseTalkSfx   = document.getElementById('chaseTalkSfx');
+const endMusic       = document.getElementById('endMusic');
+
+let currentMusic = null;
+let musicStarted = false;
+let currentMoveSnd = null, moveSndTimer = null, lastMoveType = null;
+
+function playMusic(track) {
+  if (currentMusic) { currentMusic.pause(); currentMusic.currentTime = 0; }
+  currentMusic = track;
+  if (!track) return;
+  track.currentTime = 0; track.volume = 0.5;
+  track.play().catch(() => {});
+}
+function pauseMusic() {
+  if (currentMusic) currentMusic.pause();
+}
+function resumeMusic() {
+  if (currentMusic) currentMusic.play().catch(() => {});
+}
+function stopAllMusic() {
+  if (currentMusic) { currentMusic.pause(); currentMusic.currentTime = 0; currentMusic = null; }
+  waterAmbient.pause(); waterAmbient.currentTime = 0;
+}
+function stopAllSoundsForCutscene() {
+  stopAllMusic();
+  birdNoise.pause();    birdNoise.currentTime    = 0;
+  rocketLand.pause();   rocketLand.currentTime   = 0;
+  shovelSandSfx.pause(); shovelSandSfx.currentTime = 0;
+  earthquakeSfx.pause();  earthquakeSfx.currentTime  = 0;
+  callSfx.pause();        callSfx.currentTime        = 0;
+  blockedSfx.pause();     blockedSfx.currentTime     = 0;
+  waterSplashSfx.pause();  waterSplashSfx.currentTime = 0;
+  waterWooshSfx.pause();   waterWooshSfx.currentTime  = 0;
+  smallExplosionSfx.pause(); smallExplosionSfx.currentTime = 0;
+  deadSfx.pause();           deadSfx.currentTime           = 0;
+  nukeExplosionSfx.pause();  nukeExplosionSfx.currentTime  = 0;
+  torpedoNoiseSfx.pause();   torpedoNoiseSfx.currentTime   = 0;
+  bossRoarSfx.pause();       bossRoarSfx.currentTime       = 0;
+  skyeTalkSfx.pause();       skyeTalkSfx.currentTime       = 0;
+  zumaTalkSfx.pause();       zumaTalkSfx.currentTime       = 0;
+  rubbleTalkSfx.pause();    rubbleTalkSfx.currentTime    = 0;
+  chaseTalkSfx.pause();     chaseTalkSfx.currentTime     = 0;
+  stopMoveSound();
+}
+function startWaterAmbient() {
+  waterAmbient.volume = 0.35; waterAmbient.currentTime = 0;
+  waterAmbient.play().catch(() => {});
+}
+function stopMoveSound() {
+  if (currentMoveSnd) { currentMoveSnd.pause(); currentMoveSnd.currentTime = 0; currentMoveSnd = null; }
+  clearTimeout(moveSndTimer); moveSndTimer = null; lastMoveType = null;
+}
+function playMoveSound(snd, type, dur) {
+  dur = dur || 1800;
+  if (currentMoveSnd === snd && !snd.paused && lastMoveType === type) {
+    clearTimeout(moveSndTimer);
+    moveSndTimer = setTimeout(stopMoveSound, dur);
+    return;
+  }
+  stopMoveSound();
+  snd.currentTime = 0; snd.volume = 0.55;
+  snd.play().catch(() => {});
+  currentMoveSnd = snd; lastMoveType = type;
+  moveSndTimer = setTimeout(stopMoveSound, dur);
+}
+
+/* ═══════════════ VIDEO ═══════════════ */
+const videoContainer = document.getElementById('video-container');
+const sceneVideo     = document.getElementById('scene-video');
+
+function playVideo(src, onComplete, startAt) {
+  stageTransitioning = true; inputLocked = true;
+  stopAllSoundsForCutscene();
+  videoContainer.classList.add('visible');
+  sceneVideo.src = src;
+  if (startAt) {
+    sceneVideo.load();
+    sceneVideo.onloadedmetadata = () => {
+      sceneVideo.currentTime = startAt;
+      sceneVideo.play().catch(() => {});
+      sceneVideo.onloadedmetadata = null;
+    };
+  } else {
+    sceneVideo.currentTime = 0;
+    sceneVideo.play().catch(() => {});
+  }
+  sceneVideo.onended = () => {
+    videoContainer.classList.remove('visible');
+    sceneVideo.onended = null;
+    if (onComplete) onComplete();
+  };
+}
+
+/* ═══════════════ STAGE MANAGEMENT ═══════════════ */
+const screens = {
+  start:     document.getElementById('start'),
+  landing:   document.getElementById('landing'),
+  waterpark: document.getElementById('waterpark'),
+  beach:     document.getElementById('beach'),
+  dock:      document.getElementById('dock'),
+  ocean:     document.getElementById('ocean'),
+  battle:    document.getElementById('battle'),
+};
+const endScreenEl = document.getElementById('endscreen');
+
+let stage = 'start', inputLocked = false, stageTransitioning = false;
+const INPUT_DELAY      = 360;
+const CLIMB_DELAY      = 520;
+const TRANSITION_DELAY = 700;
+let currentScreen = null;
+
+function showScreen(name, onReady) {
+  stageTransitioning = true; inputLocked = true;
+  stopMoveSound();
+  stopParkWalkLoop();
+  stopBeachWalkLoop();
+  stopDockWalkLoop();
+
+  if (currentScreen) currentScreen.classList.remove('active');
+  setTimeout(() => {
+    Object.values(screens).forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+    const el = screens[name];
+    el.style.display = (name === 'start') ? 'flex' : 'block';
+    currentScreen = el; stage = name;
+    setTimeout(() => el.classList.add('active'), 30);
+    if (onReady) onReady();
+    setTimeout(() => { stageTransitioning = false; inputLocked = false; }, TRANSITION_DELAY);
+  }, 520);
+}
+
+/* ═══════════════ PROMPT HELPERS ═══════════════ */
+function showPrompt(el) { el.classList.add('visible'); }
+function hidePrompt(el) { el.classList.remove('visible'); }
+function hideAllLandingPrompts() { hidePrompt(landKeyPrompt); hidePrompt(landArrowHint); }
+function hideAllParkPrompts() {
+  hidePrompt(parkSpacePrompt); hidePrompt(parkEnterPrompt);
+  hidePrompt(parkWalkHint);    hidePrompt(parkClimbHint);
+  hidePrompt(parkChasePrompt);
+}
+function hideAllBeachPrompts() {
+  hidePrompt(bchSpacePrompt); hidePrompt(bchRightHint);
+  hidePrompt(bchLeftHint);    hidePrompt(bchUpHint); hidePrompt(bchDownHint);
+}
+function hideAllDockPrompts() {
+  hidePrompt(dockSpacePrompt); hidePrompt(dockEnterPrompt);
+}
+
+/* ═════════════════════════════════════════════════
+   LANDING STAGE
+════════════════════════════════════════════════= */
+const zShip         = document.getElementById('zacky-ship');
+const shipSmoke     = document.getElementById('ship-smoke');
+const fallenTree    = document.getElementById('fallen-tree');
+const zLand         = document.getElementById('zacky-land');
+const birdsGif      = document.getElementById('birds-gif');
+const landKeyPrompt = document.getElementById('land-key-prompt');
+const landKeyLabel  = document.getElementById('land-key-label');
+const landArrowHint = document.getElementById('land-arrow-hint');
+
+let landPhase = 0, zackyLeft = 0, isJumping = false;
+const TREE_POS = 52;
+const landMouse  = document.getElementById('land-mouse');
+const landRubble     = document.getElementById('land-rubble');
+const rubbleSpeechImg = document.getElementById('rubble-speech');
+const RUBBLE_POS = 34;   // % left — Rubble stands between Zacky and tree
+let landRubbleTalked = false;
+
+function prepareLandingDOM() {
+  landPhase = 0; zackyLeft = 18; isJumping = false; landRubbleTalked = false;
+  hideAllLandingPrompts();
+  fallenTree.style.bottom = '5%'; fallenTree.style.left = TREE_POS + '%'; fallenTree.style.display = 'block';
+  zShip.src = 'zacky_landing.png'; zShip.style.transition = 'none';
+  zShip.style.bottom = '130%'; zShip.style.left = '8%'; zShip.style.display = 'block';
+  shipSmoke.style.bottom = '6%'; shipSmoke.style.left = '8%';
+  shipSmoke.style.opacity = '0'; shipSmoke.style.display = 'block';
+  birdsGif.style.transition = 'none'; birdsGif.style.left = '5%';
+  birdsGif.style.top = '15%'; birdsGif.style.opacity = '1'; birdsGif.style.display = 'block';
+  zLand.src = 'Zacky_stand.png'; zLand.style.left = zackyLeft + '%';
+  zLand.style.bottom = '10%'; zLand.style.display = 'none';
+  // Rubble sits between Zacky start and tree
+  landRubble.style.left = RUBBLE_POS + '%'; landRubble.style.display = 'block';
+  rubbleSpeechImg.style.opacity = '0'; rubbleSpeechImg.style.display = 'none';
+  // Mouse hidden until rocket lands
+  landMouse.style.left = '8%'; landMouse.style.display = 'none';
+}
+
+function startLandingIntroSequence() {
+  // Birds are already visible on-screen from prepareLandingDOM.
+  // Sequence: bird noise immediately → 3s pause → rocket sound
+  //           → 600ms → birds fly L→R → 2s later rocket descends
+
+  // Step 1: Bird noise plays immediately (birds already on screen)
+  birdNoise.currentTime = 0; birdNoise.volume = 0.6; birdNoise.play().catch(() => {});
+
+  // Step 2: 3-second pause, then rocket sound starts
+  setTimeout(() => {
+    rocketLand.currentTime = 0; rocketLand.volume = 0.7; rocketLand.play().catch(() => {});
+
+    // Step 3: 600ms after rocket sound — birds fly left-to-right
+    setTimeout(() => {
+      birdNoise.pause(); birdNoise.currentTime = 0;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          birdsGif.style.transition = 'left 3.4s linear, opacity 0.5s ease';
+          birdsGif.style.left = '112%';
+          setTimeout(() => { birdsGif.style.opacity = '0'; }, 2700);
+          setTimeout(() => { birdsGif.style.display = 'none'; birdsGif.style.opacity = '1'; }, 3500);
+        });
+      });
+
+      // Step 4: 2s after birds start moving → rocket descends
+      setTimeout(() => {
+        zShip.style.transition = 'bottom 4s cubic-bezier(0.25,0.8,0.35,1)';
+        zShip.style.bottom = '12%';
+        setTimeout(() => { shipSmoke.style.opacity = '1'; }, 1800);
+
+        // Step 5: ~4.1s → rocket landed — switch image, show mouse
+        setTimeout(() => {
+          rocketLand.pause(); rocketLand.currentTime = 0;
+          zShip.src = 'Vehicle_manned.png'; zShip.style.bottom = '10%';
+          shipSmoke.style.opacity = '0';
+
+          // Mouse walks out from rocket to the left
+          landMouse.style.display = 'block';
+          landMouse.style.transition = 'none';
+          landMouse.style.left = '10%';
+          landMouse.style.opacity = '1';
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              landMouse.style.transition = 'left 1.8s ease-in, opacity 0.4s ease';
+              landMouse.style.left = '-15%';
+              setTimeout(() => { landMouse.style.opacity = '0'; }, 1400);
+              setTimeout(() => {
+                landMouse.style.display = 'none';
+                landMouse.style.opacity = '1';
+              }, 1900);
+            });
+          });
+
+          // Game ready
+          setTimeout(() => {
+            playMusic(landingMusic);
+            landPhase = 1; landKeyLabel.textContent = 'Exit the ship!';
+            showPrompt(landKeyPrompt);
+          }, 1900);
+        }, 4100);
+      }, 2000);
+    }, 600);
+  }, 3000);
+}
+
+function zackyLandWalk() {
+  const step = 6; let newLeft = zackyLeft + step;
+  if (landPhase === 2) {
+    // Blocked by Rubble first (if not yet talked)
+    if (!landRubbleTalked) {
+      const rubbleEdge = RUBBLE_POS - 9;
+      if (newLeft >= rubbleEdge) {
+        newLeft = rubbleEdge; zackyLeft = newLeft;
+        zLand.style.left = zackyLeft + '%'; zLand.src = 'Zacky_stand.png';
+        hidePrompt(landArrowHint);
+        landKeyLabel.textContent = 'Talk to Rubble!'; showPrompt(landKeyPrompt); return;
+      }
+    } else {
+      // Rubble talked — now blocked by tree
+      const blockEdge = TREE_POS - 8;
+      if (newLeft >= blockEdge) {
+        newLeft = blockEdge; zackyLeft = newLeft;
+        zLand.style.left = zackyLeft + '%'; zLand.src = 'Zacky_stand.png';
+        landPhase = 3; hidePrompt(landArrowHint);
+        landKeyLabel.textContent = 'Jump over the tree!'; showPrompt(landKeyPrompt); return;
+      }
+    }
+  }
+  if (landPhase === 5 && newLeft >= 105) { zLand.src = 'Zacky_stand.png'; landingStageComplete(); return; }
+  zackyLeft = newLeft; zLand.style.left = zackyLeft + '%';
+  zLand.src = 'Zacky_walking.png'; playMoveSound(walkSfx, 'walk');
+  setTimeout(() => { if (!isJumping) zLand.src = 'Zacky_stand.png'; }, 300);
+}
+
+function zackyJump() {
+  if (isJumping) return; isJumping = true; hideAllLandingPrompts();
+  jumpSfx.currentTime = 0; jumpSfx.volume = 0.65; jumpSfx.play().catch(() => {});
+  zLand.src = 'Zacky_jump.png';
+  const peakBottom = 40, jumpDistance = 26;
+  zLand.style.transition = 'left 0.45s ease-out, bottom 0.45s ease-out';
+  zackyLeft += jumpDistance * 0.55; zLand.style.left = zackyLeft + '%'; zLand.style.bottom = peakBottom + '%';
+  setTimeout(() => {
+    zLand.style.transition = 'left 0.38s ease-in, bottom 0.38s ease-in';
+    zackyLeft += jumpDistance * 0.45; zLand.style.left = zackyLeft + '%'; zLand.style.bottom = '10%';
+  }, 460);
+  setTimeout(() => {
+    isJumping = false; zLand.src = 'Zacky_stand.png'; zLand.style.bottom = '10%';
+    landPhase = 5; showPrompt(landArrowHint);
+  }, 860);
+}
+
+function landingStageComplete() {
+  birdNoise.pause(); birdNoise.currentTime = 0;
+  rocketLand.pause(); rocketLand.currentTime = 0;
+  showScreen('waterpark', initWaterpark);
+}
+
+/* ═════════════════════════════════════════════════
+   WATER PARK STAGE
+════════════════════════════════════════════════= */
+const zPark           = document.getElementById('zacky-park');
+const parkSpacePrompt = document.getElementById('park-space-prompt');
+const parkEnterPrompt = document.getElementById('park-enter-prompt');
+const parkWalkHint    = document.getElementById('park-walk-hint');
+const parkClimbHint   = document.getElementById('park-climb-hint');
+const parkChasePrompt = document.getElementById('park-chase-prompt');
+const parkChase       = document.getElementById('park-chase');
+const chaseSpeechImg  = document.getElementById('chase-speech');
+const CHASE_POS = 35;  // % left where Chase stands
+let parkChaseTalked = false;
+
+const SLIDE_STOP_LEFT  = 66;
+const CLIMB_TOP_BOTTOM = 65;
+let parkPhase = 0, parkLeft = -10, parkBottom = 10;
+
+let parkWalkLoopId = null, rightKeyHeld = false;
+const WALK_INTERVAL = 370;
+
+function startParkWalkLoop() {
+  if (parkWalkLoopId) return;
+  doParkWalkStep();
+  parkWalkLoopId = setInterval(() => {
+    if (!rightKeyHeld || parkPhase !== 0) { stopParkWalkLoop(); return; }
+    doParkWalkStep();
+  }, WALK_INTERVAL);
+}
+function stopParkWalkLoop() {
+  if (parkWalkLoopId) { clearInterval(parkWalkLoopId); parkWalkLoopId = null; }
+}
+function doParkWalkStep() {
+  if (parkPhase !== 0) { stopParkWalkLoop(); return; }
+  let newLeft = parkLeft + 6;
+  // Chase blocks until talked to
+  if (!parkChaseTalked && newLeft >= CHASE_POS - 8) {
+    newLeft = CHASE_POS - 8; parkLeft = newLeft;
+    zPark.style.left = parkLeft + '%'; zPark.src = 'Zacky_stand.png';
+    stopParkWalkLoop(); rightKeyHeld = false;
+    hideAllParkPrompts(); showPrompt(parkChasePrompt); return;
+  }
+  if (newLeft >= SLIDE_STOP_LEFT) {
+    newLeft = SLIDE_STOP_LEFT; parkLeft = newLeft;
+    zPark.style.left = parkLeft + '%'; zPark.src = 'Zacky_stand.png';
+    parkPhase = 1; stopParkWalkLoop(); rightKeyHeld = false;
+    hidePrompt(parkWalkHint); showPrompt(parkSpacePrompt); return;
+  }
+  parkLeft = newLeft; zPark.style.left = parkLeft + '%';
+  zPark.src = 'Zacky_walking.png'; playMoveSound(walkSfx, 'walk');
+  setTimeout(() => { if (parkPhase === 0) zPark.src = 'Zacky_stand.png'; }, 280);
+}
+
+function initWaterpark() {
+  parkPhase = 0; parkLeft = -10; parkBottom = 10; rightKeyHeld = false;
+  parkChaseTalked = false;
+  stopParkWalkLoop(); hideAllParkPrompts();
+  chaseSpeechImg.style.opacity = '0'; chaseSpeechImg.style.display = 'none';
+  parkChase.style.left = CHASE_POS + '%'; parkChase.style.display = 'block';
+  zPark.src = 'Zacky_stand.png';
+  zPark.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+  zPark.style.left = parkLeft + '%'; zPark.style.bottom = parkBottom + '%'; zPark.style.display = 'block';
+  playMusic(waterparkMusic); startWaterAmbient();
+  setTimeout(() => {
+    parkLeft = 5; zPark.src = 'Zacky_walking.png';
+    zPark.style.transition = 'left 1.3s ease-out, bottom 0.4s ease';
+    zPark.style.left = parkLeft + '%';
+    setTimeout(() => {
+      zPark.src = 'Zacky_stand.png';
+      zPark.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+      showPrompt(parkWalkHint);
+    }, 1400);
+  }, 400);
+}
+
+function parkClimb() {
+  let newBottom = parkBottom + 11;
+  if (newBottom > CLIMB_TOP_BOTTOM) newBottom = CLIMB_TOP_BOTTOM;
+  parkBottom = newBottom; zPark.style.bottom = parkBottom + '%';
+  zPark.src = 'Zacky_climb1.png'; playMoveSound(climbSfx, 'climb', 900);
+  setTimeout(() => { if (parkPhase === 2) zPark.src = 'Zacky_climb.png'; }, 350);
+  if (parkBottom >= CLIMB_TOP_BOTTOM) {
+    parkPhase = 3; hidePrompt(parkClimbHint);
+    setTimeout(() => { zPark.src = 'Zacky_stand.png'; showPrompt(parkEnterPrompt); }, 400);
+  }
+}
+
+function waterparkStageComplete() {
+  hideAllParkPrompts(); stopParkWalkLoop();
+  playVideo('Slide_Scene.mp4', () => {
+    showScreen('beach', initBeach);
+  }, 1);
+}
+
+/* ═════════════════════════════════════════════════
+   BEACH STAGE
+   
+   Phase map:
+     0  = walking right (blocked by sandcastle)
+     1  = at sandcastle — must go left to tower
+     2  = walking left toward tower
+     3  = at tower climb zone — press SPACE to climb up
+     4  = climbing up (UP arrow)
+     5  = at top, walk right slightly to collect shovel
+     6  = has shovel, walk left slightly back to climb-down zone
+     7  = at climb-down zone — press SPACE to climb down
+     8  = climbing down (DOWN arrow)
+     9  = at bottom, walk right to sandcastle to dig
+    10  = at sandcastle with shovel — press SPACE to dig (castle 1→2)
+    11  = dig again — castle 2→3
+    12  = final dig — castle collapses, walk right
+    13  = walking right to terminal
+    14  = at terminal — press SPACE to end
+════════════════════════════════════════════════= */
+const zBeach       = document.getElementById('zacky-beach');
+const sandcastle   = document.getElementById('sandcastle');
+const shovelItem   = document.getElementById('shovel-item');
+const bchTower     = document.getElementById('beach-tower');
+const bchTerminal  = document.getElementById('beach-terminal');
+const bchSpacePrompt = document.getElementById('beach-space-prompt');
+const bchSpaceLabel  = document.getElementById('beach-space-label');
+const bchRightHint   = document.getElementById('beach-right-hint');
+const bchRightLabel  = document.getElementById('beach-right-label');
+const bchLeftHint    = document.getElementById('beach-left-hint');
+const bchUpHint      = document.getElementById('beach-up-hint');
+const bchDownHint    = document.getElementById('beach-down-hint');
+
+// ── Beach layout constants ─────────────────────────────────────
+// All in % of screen width / height
+const BCH_CASTLE_BLOCK  = 39;   // % left where Zacky stops (blocked by castle)
+const BCH_TOWER_CLIMB   = 23;   // % left — confirmed correct ladder position
+const BCH_TOWER_TOP_BOT = 61;   // % bottom when at top of tower (higher climb)
+const BCH_SHOVEL_ZONE   = 32;   // % left — exactly 4 short steps (step=2) from ladder at 20%
+const BCH_CLIMB_DOWN    = 23;   // % left — confirmed correct ladder position
+const BCH_CASTLE_DIG    = 36;   // % left — reach sandcastle for digging
+const BCH_TERMINAL_STOP = 68;   // % left — walk right to terminal (terminal at left:72%)
+
+let beachPhase  = 0;
+let bchLeft     = -12;   // Zacky's % left position
+let bchBottom   = 10;    // Zacky's % bottom (changes on climb)
+let bchHasShovel = false;
+let digCount    = 0;     // 0,1,2 digs done
+let lastBeachDir   = 1;    // 1=right, -1=left (for idle sprite facing)
+let blockedLocked  = false; // prevents blocked.mp3 repeating while key held
+
+// Held-key walk loops (left and right)
+let beachWalkLoopId  = null;
+let beachLeftHeld    = false;
+let beachRightHeld   = false;
+const BCH_WALK_INTERVAL = 370;
+
+function startBeachWalkLoop(dir) {
+  if (beachWalkLoopId) return;
+  doBeachWalkStep(dir);
+  beachWalkLoopId = setInterval(() => {
+    const held = (dir === 1) ? beachRightHeld : beachLeftHeld;
+    if (!held) { stopBeachWalkLoop(); return; }
+    doBeachWalkStep(dir);
+  }, BCH_WALK_INTERVAL);
+}
+function stopBeachWalkLoop() {
+  if (beachWalkLoopId) { clearInterval(beachWalkLoopId); beachWalkLoopId = null; }
+}
+
+function doBeachWalkStep(dir) {
+  // Only walk in phases that allow it
+  const walkRightPhases = [0, 2, 5, 6, 9, 12, 13, 15];  // 15 = post-cutscene walk to dock
+  const walkLeftPhases  = [2, 6];
+
+  if (dir === 1  && !walkRightPhases.includes(beachPhase)) { stopBeachWalkLoop(); return; }
+  if (dir === -1 && !walkLeftPhases.includes(beachPhase))  { stopBeachWalkLoop(); return; }
+
+  // Use a shorter step at tower top (phase 5) so Zacky creeps to shovel
+  const step = (beachPhase === 5) ? 2 : 5;
+  let newLeft = bchLeft + dir * step;
+
+  // ── Walking RIGHT ──────────────────────────────────────────
+  if (dir === 1) {
+    // Phase 0: blocked by sandcastle
+    if (beachPhase === 0 && newLeft >= BCH_CASTLE_BLOCK) {
+      newLeft = BCH_CASTLE_BLOCK; bchLeft = newLeft;
+      zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+      stopBeachWalkLoop(); beachRightHeld = false;
+      beachPhase = 1;
+      hideAllBeachPrompts();
+      // FIX 1: play blocked sound
+      blockedSfx.currentTime = 0; blockedSfx.volume = 0.7; blockedSfx.play().catch(() => {});
+      shovelItem.style.display = 'block';
+      showPrompt(bchLeftHint); return;
+    }
+
+    // Phase 2: walking left — shouldn't walk right, ignore
+    if (beachPhase === 2) { stopBeachWalkLoop(); return; }
+
+    // Phase 5: walking right on top of tower to collect shovel
+    if (beachPhase === 5 && newLeft >= BCH_SHOVEL_ZONE) {
+      newLeft = BCH_SHOVEL_ZONE; bchLeft = newLeft;
+      zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+      stopBeachWalkLoop(); beachRightHeld = false;
+      // Collect shovel!
+      collectSfx.currentTime = 0; collectSfx.volume = 0.7; collectSfx.play().catch(() => {});
+      setTimeout(() => { collectSfx.pause(); collectSfx.currentTime = 0; }, 2000);
+      shovelItem.style.display = 'none';
+      bchHasShovel = true;
+      beachPhase = 6;
+      hideAllBeachPrompts();
+      bchLeftHint.querySelector('span').textContent = 'Walk left!';
+      showPrompt(bchLeftHint); return;
+    }
+
+    // Phase 6: walking left to climb-down — don't walk right here
+    if (beachPhase === 6) { stopBeachWalkLoop(); return; }
+
+    // Phase 9: walking right back to sandcastle to dig
+    if (beachPhase === 9 && newLeft >= BCH_CASTLE_DIG) {
+      newLeft = BCH_CASTLE_DIG; bchLeft = newLeft;
+      zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+      stopBeachWalkLoop(); beachRightHeld = false;
+      beachPhase = 10;
+      hideAllBeachPrompts();
+      bchSpaceLabel.textContent = 'Dig!';
+      showPrompt(bchSpacePrompt); return;
+    }
+
+    // Phase 12: walking right after sandcastle gone — to terminal
+    if (beachPhase === 12) {
+      if (newLeft >= BCH_TERMINAL_STOP) {
+        newLeft = BCH_TERMINAL_STOP; bchLeft = newLeft;
+        zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+        stopBeachWalkLoop(); beachRightHeld = false;
+        beachPhase = 14;
+        hideAllBeachPrompts();
+        bchSpaceLabel.textContent = 'Press Spacebar to activate Terminal!';
+        showPrompt(bchSpacePrompt); return;
+      }
+    }
+
+    // Phase 15: post-cutscene — walk right until off screen → dock stage
+    if (beachPhase === 15) {
+      if (newLeft >= 103) {
+        // Zacky has walked off the right edge
+        zBeach.src = 'Zacky_stand.png'; stopBeachWalkLoop(); beachRightHeld = false;
+        showScreen('dock', initDock); return;
+      }
+    }
+
+    // Phase 13: same as 12 logic (both map to rightward walk after collapse)
+    if (beachPhase === 13) {
+      if (newLeft >= BCH_TERMINAL_STOP) {
+        newLeft = BCH_TERMINAL_STOP; bchLeft = newLeft;
+        zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+        stopBeachWalkLoop(); beachRightHeld = false;
+        beachPhase = 14;
+        hideAllBeachPrompts();
+        bchSpaceLabel.textContent = 'Press Spacebar to activate Terminal!';
+        showPrompt(bchSpacePrompt); return;
+      }
+    }
+  }
+
+  // ── Walking LEFT ──────────────────────────────────────────
+  if (dir === -1) {
+    // Phase 2: walking left toward tower climb zone
+    if (beachPhase === 2 && newLeft <= BCH_TOWER_CLIMB) {
+      newLeft = BCH_TOWER_CLIMB; bchLeft = newLeft;
+      zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+      stopBeachWalkLoop(); beachLeftHeld = false;
+      beachPhase = 3;
+      hideAllBeachPrompts();
+      bchSpaceLabel.textContent = 'Climb up!';
+      showPrompt(bchSpacePrompt); return;
+    }
+
+    // Phase 6: walking left to climb-down zone
+    if (beachPhase === 6 && newLeft <= BCH_CLIMB_DOWN) {
+      newLeft = BCH_CLIMB_DOWN; bchLeft = newLeft;
+      zBeach.style.left = bchLeft + '%'; zBeach.src = 'Zacky_stand.png';
+      stopBeachWalkLoop(); beachLeftHeld = false;
+      beachPhase = 7;
+      hideAllBeachPrompts();
+      bchSpaceLabel.textContent = 'Climb down!';
+      showPrompt(bchSpacePrompt); return;
+    }
+  }
+
+  // Move character
+  bchLeft = newLeft;
+  zBeach.style.left = bchLeft + '%';
+
+  // Track direction for idle sprite facing
+  lastBeachDir = dir;
+
+  // Flip sprite horizontally when walking left
+  zBeach.style.transform = (dir === -1) ? 'scaleX(-1)' : 'scaleX(1)';
+
+  zBeach.src = 'Zacky_walking.png';
+  playMoveSound(walkSandSfx, 'beachwalk');
+  setTimeout(() => {
+    if (![4,8].includes(beachPhase)) {
+      zBeach.src = 'Zacky_stand.png';
+      // Keep facing last-walked direction when idle
+      zBeach.style.transform = (lastBeachDir === -1) ? 'scaleX(-1)' : 'scaleX(1)';
+    }
+  }, 280);
+}
+
+function beachClimbUp() {
+  const step = 10;
+  let newBottom = bchBottom + step;
+  if (newBottom > BCH_TOWER_TOP_BOT) newBottom = BCH_TOWER_TOP_BOT;
+  bchBottom = newBottom;
+  zBeach.style.bottom = bchBottom + '%';
+  zBeach.src = 'Zacky_climb1.png';
+  playMoveSound(climbSfx, 'beachclimb', 900);
+  setTimeout(() => { if (beachPhase === 4) zBeach.src = 'Zacky_climb.png'; }, 350);
+  if (bchBottom >= BCH_TOWER_TOP_BOT) {
+    beachPhase = 5;
+    hideAllBeachPrompts();
+    zBeach.src = 'Zacky_stand.png';
+    bchRightLabel.textContent = 'Walk right to collect!';
+    showPrompt(bchRightHint);
+  }
+}
+
+function beachClimbDown() {
+  const step = 10;
+  let newBottom = bchBottom - step;
+  if (newBottom < 10) newBottom = 10;
+  bchBottom = newBottom;
+  zBeach.style.bottom = bchBottom + '%';
+  zBeach.src = 'Zacky_climb1.png';
+  playMoveSound(climbSfx, 'beachclimbdown', 900);
+  setTimeout(() => { if (beachPhase === 8) zBeach.src = 'Zacky_climb.png'; }, 350);
+  if (bchBottom <= 10) {
+    beachPhase = 9;
+    hideAllBeachPrompts();
+    zBeach.src = 'Zacky_stand.png';
+    bchRightLabel.textContent = 'Walk right to the sandcastle!';
+    showPrompt(bchRightHint);
+  }
+}
+
+function doShovelAction(onComplete) {
+  // Shovel animation: Zacky_shovel1 → Zacky_shovel2, with sound
+  inputLocked = true;
+  hideAllBeachPrompts();
+  shovelSandSfx.currentTime = 0; shovelSandSfx.volume = 0.7; shovelSandSfx.play().catch(() => {});
+  zBeach.src = 'Zacky_shovel1.png';
+  setTimeout(() => {
+    zBeach.src = 'Zacky_shovel2.png';
+    setTimeout(() => {
+      zBeach.src = 'Zacky_shovel1.png';
+      setTimeout(() => {
+        zBeach.src = 'Zacky_shovel2.png';
+        setTimeout(() => {
+          shovelSandSfx.pause(); shovelSandSfx.currentTime = 0;
+          zBeach.src = 'Zacky_stand.png';
+          inputLocked = false;
+          if (onComplete) onComplete();
+        }, 400);
+      }, 400);
+    }, 400);
+  }, 400);
+}
+
+function castleCollapse() {
+  inputLocked = true;
+  hideAllBeachPrompts();
+  pauseMusic();
+
+  // FIX 8: longer shake + earthquake sound
+  earthquakeSfx.currentTime = 0; earthquakeSfx.volume = 0.8;
+  earthquakeSfx.play().catch(() => {});
+
+  const beachEl = screens['beach'];
+  beachEl.classList.add('shake');
+  setTimeout(() => {
+    beachEl.classList.remove('shake');
+    earthquakeSfx.pause(); earthquakeSfx.currentTime = 0;
+    sandcastle.src = 'sandcastle_gone.png';
+    setTimeout(() => {
+      resumeMusic();
+      // FIX 9: switch terminal image and play call sound
+      bchTerminal.src = 'terminal_call.png';
+      callSfx.currentTime = 0; callSfx.volume = 0.75;
+      callSfx.play().catch(() => {});
+      beachPhase = 13;
+      inputLocked = false;
+      bchRightLabel.textContent = 'Walk right to the terminal!';
+      showPrompt(bchRightHint);
+    }, 500);
+  }, 2500);
+}
+
+function initBeach() {
+  beachPhase   = 0;
+  bchLeft      = -12;
+  bchBottom    = 10;
+  bchHasShovel = false;
+  digCount     = 0;
+  beachLeftHeld = false; beachRightHeld = false;
+  lastBeachDir  = 1;     // reset facing right
+  blockedLocked = false;   // reset blocked-sound lock
+  stopBeachWalkLoop();
+  hideAllBeachPrompts();
+
+  sandcastle.src = 'sandcastle_1.png';
+  sandcastle.style.height = '22vh';  // reset to base size on restart
+  bchTerminal.src = 'Terminal.png';   // reset terminal image on restart
+  callSfx.pause(); callSfx.currentTime = 0;
+  shovelItem.style.display = 'none';
+
+  zBeach.src = 'Zacky_stand.png';
+  zBeach.style.transform = 'scaleX(1)';
+  zBeach.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+  zBeach.style.left   = bchLeft + '%';
+  zBeach.style.bottom = bchBottom + '%';
+  zBeach.style.display = 'block';
+
+  // Position shovel item at top-right of beach tower
+  // Tower is at left:4%, we put the shovel just to the right of tower top
+  shovelItem.style.left   = '35%';
+  shovelItem.style.bottom = '64%';
+
+  playMusic(beachMusic);
+
+  // Zacky walks in from left automatically
+  setTimeout(() => {
+    bchLeft = 5; zBeach.src = 'Zacky_walking.png';
+    zBeach.style.transition = 'left 1.3s ease-out, bottom 0.4s ease';
+    zBeach.style.left = bchLeft + '%';
+    setTimeout(() => {
+      zBeach.src = 'Zacky_stand.png';
+      zBeach.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+      bchRightLabel.textContent = 'Walk right!';
+      showPrompt(bchRightHint);
+    }, 1400);
+  }, 400);
+}
+
+function beachStageComplete() {
+  hideAllBeachPrompts(); stopBeachWalkLoop();
+  playVideo('Skye_Taken.mp4', () => {
+    // Return to beach — Zacky is at terminal, can now walk right to dock
+    // Use showScreen but restore Zacky's position post-cutscene
+    stageTransitioning = true; inputLocked = true;
+    stopMoveSound(); stopParkWalkLoop(); stopBeachWalkLoop(); stopDockWalkLoop();
+    if (currentScreen) currentScreen.classList.remove('active');
+    setTimeout(() => {
+      Object.values(screens).forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+      const el = screens['beach'];
+      el.style.display = 'block';
+      currentScreen = el; stage = 'beach';
+      setTimeout(() => el.classList.add('active'), 30);
+      // Restore Zacky at terminal, set phase 15 = post-cutscene walk-right-to-dock
+      bchTerminal.src = 'Terminal.png';  // fix 5: restore terminal image after cutscene
+      beachPhase  = 15;
+      bchLeft     = 68;
+      bchBottom   = 10;
+      zBeach.src  = 'Zacky_stand.png';
+      zBeach.style.transform = 'scaleX(1)';
+      zBeach.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+      zBeach.style.left   = bchLeft + '%';
+      zBeach.style.bottom = bchBottom + '%';
+      zBeach.style.display = 'block';
+      playMusic(beachMusic);
+      setTimeout(() => {
+        stageTransitioning = false; inputLocked = false;
+        bchRightLabel.textContent = 'Walk right!';
+        showPrompt(bchRightHint);
+      }, TRANSITION_DELAY);
+    }, 520);
+  });
+}
+
+/* ═════════════════════════════════════════════════
+   DOCK STAGE
+
+   Phase map:
+     1 = Zacky has walked in, standing — press SPACE to jump
+     2 = in vehicle (Zacky_water_float.png) — press ENTER to depart
+════════════════════════════════════════════════= */
+const zDock           = document.getElementById('zacky-dock');
+const dockVehicle     = document.getElementById('dock-vehicle');
+const dockSpacePrompt = document.getElementById('dock-space-prompt');
+const dockEnterPrompt = document.getElementById('dock-enter-prompt');
+
+// dockRightHint no longer used but keep stopDockWalkLoop as a no-op for safety
+const DOCK_ENTRY_POS   = 10;   // % left — where Zacky stands after walking in
+const DOCK_VEHICLE_POS = 48;   // % left — centre of vehicle (matches CSS left:50%)
+
+let dockPhase     = 1;
+let dockLeft      = DOCK_ENTRY_POS;
+let dockRightHeld = false;  // kept for keyup handler compatibility
+let dockWalkLoopId = null;
+
+function startDockWalkLoop() {}   // no-op — no walk phase in dock
+function stopDockWalkLoop() {
+  if (dockWalkLoopId) { clearInterval(dockWalkLoopId); dockWalkLoopId = null; }
+}
+
+function dockJump() {
+  // Long jump arc from entry position all the way to the vehicle
+  hideAllDockPrompts();
+  jumpSfx.currentTime = 0; jumpSfx.volume = 0.65; jumpSfx.play().catch(() => {});
+  zDock.src = 'Zacky_jump.png';
+
+  const startLeft    = dockLeft;
+  const targetLeft   = DOCK_VEHICLE_POS;
+  const jumpDist     = targetLeft - startLeft;
+  const peakBottom   = 45;    // peak height of the big arc
+  const groundBottom = 2;     // matches vehicle bottom: 2%
+
+  // Arc UP — long ease-out for a big leap feel
+  zDock.style.transition = 'left 0.65s ease-out, bottom 0.65s ease-out';
+  dockLeft = startLeft + jumpDist * 0.5;
+  zDock.style.left   = dockLeft + '%';
+  zDock.style.bottom = peakBottom + '%';
+
+  // Arc DOWN — ease-in to land
+  setTimeout(() => {
+    zDock.style.transition = 'left 0.55s ease-in, bottom 0.55s ease-in';
+    dockLeft = targetLeft;
+    zDock.style.left   = dockLeft + '%';
+    zDock.style.bottom = groundBottom + '%';
+  }, 660);
+
+  // Landing — board the vehicle
+  setTimeout(() => {
+    dockVehicle.src = 'Zacky_water_float.png';
+    zDock.style.display = 'none';
+    waterSplashSfx.currentTime = 0; waterSplashSfx.volume = 0.8;
+    waterSplashSfx.play().catch(() => {});
+    dockPhase = 2;
+    inputLocked = false;
+    showPrompt(dockEnterPrompt);
+  }, 1250);
+}
+
+function initDock() {
+  dockPhase    = 1;
+  dockLeft     = -12;
+  dockRightHeld = false;
+  stopDockWalkLoop();
+  hideAllDockPrompts();
+
+  dockVehicle.src = 'Water_Vehicle_Unmanned.png';
+
+  zDock.src = 'Zacky_stand.png';
+  zDock.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+  zDock.style.left   = dockLeft + '%';
+  zDock.style.bottom = '13%';
+  zDock.style.display = 'block';
+
+  // Zacky auto-walks in from left, stops at entry position, spacebar prompt appears
+  setTimeout(() => {
+    dockLeft = DOCK_ENTRY_POS;
+    zDock.src = 'Zacky_walking.png';
+    zDock.style.transition = 'left 1.1s ease-out, bottom 0.4s ease';
+    zDock.style.left = dockLeft + '%';
+    playMoveSound(walkSandSfx, 'dockwalk');
+    setTimeout(() => {
+      zDock.src = 'Zacky_stand.png';
+      zDock.style.transition = 'left 0.35s ease, bottom 0.4s ease';
+      showPrompt(dockSpacePrompt);
+    }, 1200);
+  }, 400);
+}
+
+function dockStageComplete() {
+  hideAllDockPrompts(); stopDockWalkLoop();
+  playVideo('dock_departure.mp4', () => {
+    showScreen('ocean', initOcean);
+  });
+}
+
+/* ═════════════════════════════════════════════════
+   OCEAN STAGE
+
+   Layout (all in % of viewport):
+     Sub horizontal position: left: 5% (fixed)
+     Sub vertical positions:
+       top    = bottom: 65%  (catches Lego and Mouse)
+       bottom = bottom: 25%  (catches Rugby ball)
+
+   Object float lanes (% bottom, matching sub positions):
+       Lego   — top lane:    bottom: 65%
+       Rugby  — bottom lane: bottom: 25%
+       Mouse  — top lane:    bottom: 65%
+
+   Object travel: right:110% → left:4% over 5 seconds (CSS transition)
+   Catch check: JS interval polling — when object's computed left
+                approaches sub's right edge (~20%), check vertical alignment.
+
+   Phase map:
+     0 = sub entering from left
+     1 = lego inbound — player must stay at top (default)
+     2 = lego caught — rugby inbound — player must move down
+     3 = rugby caught — mouse inbound — player must move up
+     4 = mouse caught — exit sequence
+════════════════════════════════════════════════= */
+const oceanSub      = document.getElementById('ocean-sub');
+const oceanLego     = document.getElementById('ocean-lego');
+const oceanRugby    = document.getElementById('ocean-rugby');
+const oceanMouse    = document.getElementById('ocean-mouse');
+const oceanUpHint   = document.getElementById('ocean-up-hint');
+const oceanDownHint = document.getElementById('ocean-down-hint');
+
+// Sub vertical positions
+const OCN_SUB_LEFT   = 5;    // % left — sub stays on left side
+const OCN_TOP_BOT    = 65;   // % bottom — top lane
+const OCN_BOTTOM_BOT = 25;   // % bottom — bottom lane
+const OCN_CATCH_LEFT = 12;   // % left threshold — object caught when it reaches here
+
+let oceanPhase  = 0;
+let oceanSubPos = 'top';          // 'top' | 'bottom'
+let oceanCatchTimer = null;       // interval polling for catch detection
+
+function hideAllOceanHints() {
+  hidePrompt(oceanUpHint); hidePrompt(oceanDownHint);
+}
+
+function playWoosh() {
+  waterWooshSfx.currentTime = 0; waterWooshSfx.volume = 0.6;
+  waterWooshSfx.play().catch(() => {});
+}
+
+function oceanMoveUp() {
+  oceanSubPos = 'top';
+  oceanSub.style.bottom = OCN_TOP_BOT + '%';
+  playWoosh();
+  hideAllOceanHints();
+}
+
+function oceanMoveDown() {
+  oceanSubPos = 'bottom';
+  oceanSub.style.bottom = OCN_BOTTOM_BOT + '%';
+  playWoosh();
+  hideAllOceanHints();
+}
+
+// Launch a collectible object across the screen.
+// lane: 'top' | 'bottom'
+// onCatch(obj): called when the object is collected
+function launchObject(obj, lane, onCatch) {
+  const laneBotPct = (lane === 'top') ? OCN_TOP_BOT : OCN_BOTTOM_BOT;
+
+  // Position off-screen right, at correct vertical lane
+  obj.style.transition = 'none';
+  obj.style.left   = '110%';
+  obj.style.bottom = laneBotPct + '%';
+  obj.style.opacity = '1';
+  obj.style.display = 'block';
+
+  // Force reflow so transition applies
+  obj.getBoundingClientRect();
+
+  // Start float across (10 seconds — half speed)
+  obj.style.transition = 'left 10s linear';
+  obj.style.left = '-15%';
+
+  // Poll for catch — check if object has reached the sub's x zone
+  // and sub is in the matching lane
+  let caught = false;
+  oceanCatchTimer = setInterval(() => {
+    if (caught) return;
+    const rect = obj.getBoundingClientRect();
+    const pctLeft = (rect.left / window.innerWidth) * 100;
+
+    if (pctLeft <= OCN_CATCH_LEFT + 6) {  // object entering catch zone (closer to sub)
+      const subMatches = (lane === 'top')   ? (oceanSubPos === 'top')
+                       : /* bottom lane */    (oceanSubPos === 'bottom');
+      if (subMatches) {
+        caught = true;
+        clearInterval(oceanCatchTimer); oceanCatchTimer = null;
+        // Collect!
+        obj.style.transition = 'none';
+        obj.style.display = 'none';
+        collectSfx.currentTime = 0; collectSfx.volume = 0.7;
+        collectSfx.play().catch(() => {});
+        setTimeout(() => { collectSfx.pause(); collectSfx.currentTime = 0; }, 2000);
+        onCatch();
+      }
+      // If sub is in wrong position, object will just float past (missed)
+      // For this design we let the object slide off left — then re-trigger if missed
+      if (pctLeft <= -15) {
+        // Object gone off left — missed. Re-launch same object after short pause
+        clearInterval(oceanCatchTimer); oceanCatchTimer = null;
+        obj.style.display = 'none';
+        setTimeout(() => { if (!caught) launchObject(obj, lane, onCatch); }, 1500);
+      }
+    }
+  }, 80);
+}
+
+function oceanStageComplete() {
+  inputLocked = true;
+  hideAllOceanHints();
+  clearInterval(oceanCatchTimer); oceanCatchTimer = null;
+
+  // Sub moves down to mid-screen
+  oceanSub.style.bottom = '40%';
+  playWoosh();
+
+  // Then after settling, zoom off to the right rapidly
+  setTimeout(() => {
+    waterWooshSfx.currentTime = 0; waterWooshSfx.volume = 0.8;
+    waterWooshSfx.play().catch(() => {});
+    oceanSub.style.transition = 'left 1.2s cubic-bezier(0.4,0,1,1), bottom 0.6s ease';
+    oceanSub.style.left = '115%';
+
+    setTimeout(() => {
+      showScreen('battle', initBattle);
+    }, 1300);
+  }, 800);
+}
+
+function initOceanBubbles() {
+  const container = document.getElementById('ocean-bubbles');
+  container.innerHTML = '';
+  for (let i = 0; i < 18; i++) {
+    const b = document.createElement('span');
+    const sz = 14 + Math.random() * 50;
+    b.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;` +
+                      `animation-duration:${7+Math.random()*14}s;animation-delay:${Math.random()*12}s;`;
+    container.appendChild(b);
+  }
+}
+
+function spawnBubbles(containerId, count) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('span');
+    const sz = 16 + Math.random() * 55;
+    b.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;` +
+                      `animation-duration:${7+Math.random()*14}s;animation-delay:${Math.random()*12}s;`;
+    container.appendChild(b);
+  }
+}
+
+function initOcean() {
+  oceanPhase  = 0;
+  oceanSubPos = 'top';
+  initOceanBubbles();
+  clearInterval(oceanCatchTimer); oceanCatchTimer = null;
+  hideAllOceanHints();
+
+  // Reset all objects
+  [oceanLego, oceanRugby, oceanMouse].forEach(o => {
+    o.style.display = 'none'; o.style.transition = 'none';
+  });
+
+  // Sub starts off-screen left, slides in to top-left
+  oceanSub.style.transition = 'none';
+  oceanSub.style.left   = '-25%';
+  oceanSub.style.bottom = OCN_TOP_BOT + '%';
+  oceanSub.style.display = 'block';
+  oceanZuma.style.display = 'none'; oceanZuma.style.right = '-20%';
+  zumaSpeechImg.style.opacity = '0'; zumaSpeechImg.style.display = 'none';
+
+  playMusic(oceanMusic);
+
+  // Woosh plays as sub enters
+  setTimeout(() => {
+    playWoosh();
+    oceanSub.style.transition = 'left 1.8s cubic-bezier(0.25,0.8,0.35,1), bottom 0.6s ease';
+    oceanSub.style.left = OCN_SUB_LEFT + '%';
+
+    // Once sub has settled, start phase 1 — launch Lego
+    setTimeout(() => {
+      oceanPhase = 1;
+      // Lego comes in at top lane — sub is already there, just wait for it
+      launchObject(oceanLego, 'top', () => {
+        // Lego caught — phase 2: rugby at bottom, prompt player to move down
+        oceanPhase = 2;
+        showPrompt(oceanDownHint);
+        setTimeout(() => {
+          launchObject(oceanRugby, 'bottom', () => {
+            // Rugby caught — phase 3: mouse at top, prompt player to move up
+            oceanPhase = 3;
+            showPrompt(oceanUpHint);
+            setTimeout(() => {
+              launchObject(oceanMouse, 'top', () => {
+                // Mouse caught — Zuma sequence then exit
+                oceanPhase = 4;
+                hideAllOceanHints();
+                oceanZuma.style.display = 'block';
+                requestAnimationFrame(() => { oceanZuma.style.right = '3%'; });
+                setTimeout(() => {
+                  zumaSpeechImg.style.display = 'block';
+                  requestAnimationFrame(() => { zumaSpeechImg.style.opacity = '1'; });
+                  zumaTalkSfx.currentTime = 0; zumaTalkSfx.volume = 0.85;
+                  zumaTalkSfx.play().catch(() => {});
+                  setTimeout(() => {
+                    zumaTalkSfx.pause(); zumaTalkSfx.currentTime = 0;
+                    zumaSpeechImg.style.opacity = '0';
+                    setTimeout(() => { zumaSpeechImg.style.display = 'none'; }, 320);
+                    oceanZuma.style.right = '-20%';
+                    setTimeout(() => {
+                      oceanZuma.style.display = 'none';
+                      oceanStageComplete();
+                    }, 1300);
+                  }, 3000);
+                }, 1400);
+              });
+            }, 1000);
+          });
+        }, 1000);
+      });
+    }, 2000);
+  }, 400);
+}
+
+/* ═════════════════════════════════════════════════
+   BATTLE STAGE
+
+   Phase map:
+     1 = Monster 1 (static, 3 hits)
+     2 = Monster 2 wave 1 (walks left, 4 hits)
+     3 = Monster 2 wave 2 (walks left, 4 hits)
+     4 = Monster 2 wave 3 (walks left, 4 hits)
+     5 = Boss appears — first torpedo fades, Enter to switch nuke
+     6 = Nuke mode — one shot, then ending cutscenes
+     99 = cutscene/exit locked
+════════════════════════════════════════════════= */
+const btlSub       = document.getElementById('battle-sub');
+const btlSkye      = document.getElementById('battle-skye');
+const btlSpacePrompt = document.getElementById('battle-space-prompt');
+const btlSpaceLabel  = document.getElementById('battle-space-label');
+const btlMonster   = document.getElementById('battle-monster');
+const btlBoss      = document.getElementById('battle-boss');
+const btlNukeExp   = document.getElementById('nuke-explosion');
+const btlEnterProm = document.getElementById('battle-enter-prompt');
+
+// Layout constants (% viewport)
+const BTL_SUB_LEFT     = 5;    // sub fixed left
+const BTL_SUB_BOTTOM   = 15;   // sub fixed bottom
+const BTL_M1_LEFT      = 65;   // monster 1 start left
+const BTL_M2_START     = 85;   // monster 2 start left (walks left)
+const BTL_M2_STOP      = 12;   // monster 2 stops here (near Zacky)
+const BTL_BOSS_LEFT    = 55;   // boss left position
+const BTL_TORP_SPEED   = 0.8;  // % per frame for regular torpedo
+const BTL_NUKE_SPEED   = 0.3;  // % per frame for nuke
+const BTL_FIRE_DELAY   = 1800; // ms minimum between torpedo shots (child-friendly)
+const BTL_MAX_TORPS    = 2;    // max torpedos on screen
+
+let btlPhase        = 0;
+let btlMonsterHP    = 0;
+let btlM2WaveCount  = 0;
+let btlMonsterLeft  = BTL_M1_LEFT;
+let btlMonsterMoveId = null;   // setInterval for monster walking
+let btlTorpedos     = [];      // active torpedo objects [{el, left, bottom}]
+let btlTorpLoopId   = null;    // rAF id for torpedo loop
+let btlLastFire     = 0;       // timestamp of last shot (throttle)
+let btlNukeMode     = false;
+let btlNukeFired    = false;
+let btlHitLocked    = false;   // prevents double-counting hits during flash
+
+function btlHideEnterPrompt() { btlEnterProm.classList.remove('visible'); }
+function btlShowEnterPrompt() { btlEnterProm.classList.add('visible'); }
+
+// ── Torpedo animation loop ─────────────────────────────────
+function btlStartTorpLoop() {
+  if (btlTorpLoopId) return;
+  btlTorpLoop();
+}
+function btlStopTorpLoop() {
+  if (btlTorpLoopId) { cancelAnimationFrame(btlTorpLoopId); btlTorpLoopId = null; }
+  torpedoNoiseSfx.pause(); torpedoNoiseSfx.currentTime = 0;
+}
+function btlTorpLoop() {
+  btlTorpLoopId = requestAnimationFrame(() => {
+    if (stage !== 'battle') { btlStopTorpLoop(); return; }
+    const toRemove = [];
+
+    btlTorpedos.forEach((t, i) => {
+      t.left += t.isNuke ? BTL_NUKE_SPEED : BTL_TORP_SPEED;
+      t.el.style.left = t.left + '%';
+
+      // Off screen — remove
+      if (t.left > 105) { toRemove.push(i); return; }
+
+      // Nuke fades when it hits boss
+      if (t.isNuke) {
+        const bossRect    = btlBoss.getBoundingClientRect();
+        const torpRect    = t.el.getBoundingClientRect();
+        if (torpRect.left < bossRect.right && torpRect.right > bossRect.left &&
+            torpRect.top  < bossRect.bottom && torpRect.bottom > bossRect.top) {
+          toRemove.push(i);
+          btlNukeHitBoss();
+        }
+        return;
+      }
+
+      // Boss phase — first torpedo fades on contact
+      if (btlPhase === 5) {
+        const bossRect = btlBoss.getBoundingClientRect();
+        const torpRect = t.el.getBoundingClientRect();
+        if (torpRect.left < bossRect.right && torpRect.right > bossRect.left &&
+            torpRect.top  < bossRect.bottom && torpRect.bottom > bossRect.top) {
+          // Fade torpedo, show enter prompt
+          t.el.style.transition = 'opacity 0.4s';
+          t.el.style.opacity = '0';
+          toRemove.push(i);
+          btlShowEnterPrompt();
+        }
+        return;
+      }
+
+      // Regular monster hit detection (skip if M2 is invulnerable during dodge)
+      if (btlPhase >= 1 && btlPhase <= 4 && !btlHitLocked && !btlM2Invulnerable) {
+        const mRect   = btlMonster.getBoundingClientRect();
+        const tRect   = t.el.getBoundingClientRect();
+        if (tRect.left < mRect.right && tRect.right > mRect.left &&
+            tRect.top  < mRect.bottom && tRect.bottom > mRect.top) {
+          toRemove.push(i);
+          btlHitMonster();
+        }
+      }
+    });
+
+    // Remove spent torpedos (reverse to keep indices valid)
+    toRemove.reverse().forEach(i => {
+      btlTorpedos[i].el.remove();
+      btlTorpedos.splice(i, 1);
+    });
+
+    // Stop torpedo noise when no torpedos remain
+    if (btlTorpedos.length === 0) {
+      torpedoNoiseSfx.pause(); torpedoNoiseSfx.currentTime = 0;
+    }
+
+    if (btlTorpedos.length > 0 || btlNukeFired) btlTorpLoop();
+    else btlTorpLoopId = null;
+  });
+}
+
+// ── Fire a torpedo ─────────────────────────────────────────
+function btlFireTorpedo() {
+  if (stage !== 'battle' || btlPhase === 99) return;
+
+  // Nuke mode: one shot only
+  if (btlNukeMode) {
+    if (btlNukeFired) return;
+    btlNukeFired = true;
+    btlHideEnterPrompt();
+  hidePrompt(btlSpacePrompt);
+    pauseMusic();
+    // Revert sub to normal image
+    btlSub.src = 'Zacky_submarine.png';
+    btlSpawnTorpedo(true);
+    btlStartTorpLoop();
+    return;
+  }
+
+  // Regular torpedos: phase 1–4 only, max 2, throttled
+  if (btlPhase < 1 || btlPhase > 4) return;
+  if (btlTorpedos.length >= BTL_MAX_TORPS) return;
+  const now = Date.now();
+  if (now - btlLastFire < BTL_FIRE_DELAY) return;
+  btlLastFire = now;
+
+  btlSpawnTorpedo(false);
+  btlStartTorpLoop();
+}
+
+function btlSpawnTorpedo(isNuke) {
+  const el = document.createElement('img');
+  el.src = isNuke ? 'torpedo_nuke.png' : 'torpedo.png';
+  el.className = 'btl-torpedo';
+  // Spawn from right edge of sub
+  const startLeft = BTL_SUB_LEFT + 8;
+  const startBot  = BTL_SUB_BOTTOM + 4;
+  el.style.left   = startLeft + '%';
+  el.style.bottom = startBot + '%';
+  el.style.opacity = '1';
+  el.style.transition = '';
+  document.getElementById('battle').appendChild(el);
+  btlTorpedos.push({ el, left: startLeft, bottom: startBot, isNuke });
+  // Start torpedo travel noise (looping — covers all active torpedos)
+  torpedoNoiseSfx.currentTime = 0; torpedoNoiseSfx.volume = 0.6;
+  torpedoNoiseSfx.play().catch(() => {});
+}
+
+// ── Hit a regular monster ──────────────────────────────────
+function btlHitMonster() {
+  if (btlHitLocked) return;
+  btlHitLocked = true;
+
+  // Flash red / shake
+  btlMonster.classList.remove('monster-hit');
+  void btlMonster.offsetWidth;  // reflow to restart animation
+  btlMonster.classList.add('monster-hit');
+
+  // Explosion sound (stop after 1s)
+  smallExplosionSfx.currentTime = 0; smallExplosionSfx.volume = 0.7;
+  smallExplosionSfx.play().catch(() => {});
+  setTimeout(() => { smallExplosionSfx.pause(); smallExplosionSfx.currentTime = 0; }, 1000);
+
+  btlMonsterHP--;
+
+  setTimeout(() => {
+    btlMonster.classList.remove('monster-hit');
+    btlHitLocked = false;
+
+    if (btlMonsterHP <= 0) {
+      btlKillMonster();
+    }
+  }, 700);
+}
+
+// ── Kill current monster ──────────────────────────────────
+function btlKillMonster() {
+  btlStopMonsterMove();
+  deadSfx.currentTime = 0; deadSfx.volume = 0.8; deadSfx.play().catch(() => {});
+
+  btlMonster.style.transition = 'opacity 0.5s';
+  btlMonster.style.opacity = '0';
+
+  setTimeout(() => {
+    btlMonster.style.opacity = '1';
+    btlMonster.style.transition = '';
+
+    if (btlPhase === 1) {
+      // M1 dead — spawn M2 wave 1
+      btlM2WaveCount = 1;
+      btlSpawnM2();
+    } else if (btlPhase === 2) {
+      btlM2WaveCount = 2;
+      btlSpawnM2();
+    } else if (btlPhase === 3) {
+      btlM2WaveCount = 3;
+      btlSpawnM2();
+    } else if (btlPhase === 4) {
+      // All M2 waves done — spawn boss
+      btlSpawnBoss();
+    }
+  }, 600);
+}
+
+// ── Monster 2 walking logic ────────────────────────────────
+function btlSpawnM2() {
+  btlPhase       = btlM2WaveCount + 1; // 2, 3, 4
+  btlMonsterHP   = 4;
+  btlMonsterLeft = BTL_M2_START;
+  // Hide first, reposition off-screen right, THEN show so player never sees it at wrong pos
+  btlMonster.style.display = 'none';
+  btlMonster.style.transition = 'none';
+  btlMonster.src = 'Sea_Monster_2.png';
+  btlMonster.style.left = btlMonsterLeft + '%';
+  btlMonster.style.bottom = '15%';
+  btlMonster.classList.remove('monster-hit');
+  void btlMonster.offsetWidth;  // force reflow
+  btlMonster.style.display = 'block';
+  btlStartMonsterMove();
+}
+
+// Dodge state for M2 waves
+let btlM2Dodging      = false;   // currently dodged up
+let btlM2DodgeLocked  = false;   // cooldown — won't dodge two torpedos in a row
+let btlM2Invulnerable = false;   // true during dodge upward movement — blocks hit registration
+const BTL_M2_DODGE_BOTTOM = 78; // % bottom when dodged up — very high to clear torpedo
+const BTL_M2_NORMAL_BOTTOM = 15; // normal bottom %
+
+function btlStartMonsterMove() {
+  if (btlMonsterMoveId) return;
+  btlM2Dodging = false;
+  btlM2DodgeLocked = false;
+  btlM2Invulnerable = false;
+  btlMonster.style.bottom = BTL_M2_NORMAL_BOTTOM + '%';
+  btlMonsterMoveId = setInterval(() => {
+    if (btlMonsterHP <= 0) { btlStopMonsterMove(); return; }
+    if (btlMonsterLeft <= BTL_M2_STOP) { btlStopMonsterMove(); return; }
+    btlMonsterLeft -= 0.15;
+    btlMonster.style.left = btlMonsterLeft + '%';
+
+    // Dodge check: scan for incoming torpedos
+    if (!btlM2Dodging && !btlM2DodgeLocked && btlTorpedos.length > 0) {
+      // Look for a torpedo heading toward the monster
+      const mRect = btlMonster.getBoundingClientRect();
+      for (const t of btlTorpedos) {
+        if (t.isNuke) continue;
+        const tRect = t.el.getBoundingClientRect();
+        // Torpedo approaching from left, within 500px (triggers earlier)
+        const approaching = tRect.right < mRect.left && (mRect.left - tRect.right) < 500;
+        const sameLevel   = Math.abs(tRect.top - mRect.top) < mRect.height * 1.2;
+        if (approaching && sameLevel && Math.random() < 0.3) {
+          // Dodge — move high enough to clearly clear torpedo
+          btlM2Dodging = true;
+          btlM2DodgeLocked = true;
+          btlM2Invulnerable = true;  // immune to hits during upward movement
+          btlMonster.style.transition = 'bottom 0.25s ease-out';
+          btlMonster.style.bottom = BTL_M2_DODGE_BOTTOM + '%';
+          // Clear invulnerability once upward transition completes (0.25s + small buffer)
+          setTimeout(() => { btlM2Invulnerable = false; }, 350);
+
+          // Watch for torpedo to pass under, then come back down
+          const dodgeCheck = setInterval(() => {
+            if (!btlM2Dodging) { clearInterval(dodgeCheck); return; }
+            const mR2 = btlMonster.getBoundingClientRect();
+            const stillThreat = btlTorpedos.some(t2 => {
+              if (t2.isNuke) return false;
+              const tR2 = t2.el.getBoundingClientRect();
+              return tR2.right > mR2.left - 20 && tR2.left < mR2.right + 150;
+            });
+            if (!stillThreat) {
+              clearInterval(dodgeCheck);
+              btlM2Dodging = false;
+              btlMonster.style.transition = 'bottom 1.8s ease-in';
+              btlMonster.style.bottom = BTL_M2_NORMAL_BOTTOM + '%';
+              // Unlock dodge after 3s cooldown
+              setTimeout(() => { btlM2DodgeLocked = false; }, 3000);
+            }
+          }, 100);
+          break;
+        }
+      }
+    }
+  }, 50);
+}
+
+function btlStopMonsterMove() {
+  if (btlMonsterMoveId) { clearInterval(btlMonsterMoveId); btlMonsterMoveId = null; }
+  btlM2Dodging = false; btlM2DodgeLocked = false; btlM2Invulnerable = false;
+}
+
+// ── Boss ───────────────────────────────────────────────────
+function btlSpawnBoss() {
+  btlPhase = 5;
+  btlMonster.style.display = 'none';
+  btlBoss.style.left    = BTL_BOSS_LEFT + '%';
+  btlBoss.style.display = 'block';
+  btlBoss.style.opacity = '1';
+  btlBoss.classList.add('boss-shake');  // boss shakes continuously until nuke
+  hidePrompt(btlSpacePrompt);  // hide shoot prompt during boss phase
+  btlShowEnterPrompt();  // show Enter prompt immediately when boss spawns
+  // Boss roar
+  bossRoarSfx.currentTime = 0; bossRoarSfx.volume = 0.85;
+  bossRoarSfx.play().catch(() => {});
+}
+
+function btlActivateNuke() {
+  if (btlPhase !== 5) return;
+  btlPhase    = 6;
+  btlNukeMode = true;
+  btlHideEnterPrompt();
+  btlSub.src = 'Zacky_nuke.png';
+  btlSpaceLabel.textContent = 'Fire Nuclear Torpedo!';
+  showPrompt(btlSpacePrompt);
+}
+
+function btlNukeHitBoss() {
+  btlPhase = 99;
+  btlStopTorpLoop();
+  btlStopMonsterMove();
+  btlBoss.classList.remove('boss-shake');  // stop shake on nuke
+  hidePrompt(btlSpacePrompt);
+  btlHideEnterPrompt();
+
+  // Position nuke explosion over boss centre
+  const bossRect   = btlBoss.getBoundingClientRect();
+  const battleRect = document.getElementById('battle').getBoundingClientRect();
+  const expLeft    = bossRect.left - battleRect.left + bossRect.width / 2;
+  const expTop     = bossRect.top  - battleRect.top  + bossRect.height / 2;
+  btlNukeExp.style.left    = expLeft + 'px';
+  btlNukeExp.style.top     = expTop  + 'px';
+  btlNukeExp.style.width   = Math.max(bossRect.width, bossRect.height) * 2.5 + 'px';
+  btlNukeExp.style.transform = 'translateX(-50%) translateY(-50%) scale(0)';
+  btlNukeExp.style.display = 'block';
+  btlNukeExp.style.opacity = '1';
+
+  // Play nuke explosion sound
+  nukeExplosionSfx.currentTime = 0; nukeExplosionSfx.volume = 0.9;
+  nukeExplosionSfx.play().catch(() => {});
+
+  // Expand explosion
+  void btlNukeExp.offsetWidth;
+  btlNukeExp.classList.add('nuke-expand');
+
+  // After explosion, fade boss, then cutscenes
+  setTimeout(() => {
+    btlBoss.style.transition = 'opacity 0.8s';
+    btlBoss.style.opacity = '0';
+  }, 800);
+
+  setTimeout(() => {
+    // Two ending cutscenes back to back
+    playVideo('Ending_Scene_1.mp4', () => {
+      playVideo('Ending_Scene_2.mp4', () => {
+        showEndScreen();
+      });
+    });
+  }, 2000);
+}
+
+function battleSkip() {
+  // Skip straight to ending cutscenes
+  btlPhase = 99;
+  btlStopTorpLoop();
+  btlStopMonsterMove();
+  // Clear any spawned torpedos
+  btlTorpedos.forEach(t => t.el.remove()); btlTorpedos = [];
+  playVideo('Ending_Scene_1.mp4', () => {
+    playVideo('Ending_Scene_2.mp4', () => {
+      showEndScreen();
+    });
+  });
+}
+
+function initBattle() {
+  spawnBubbles('battle-bubbles', 20);
+  btlPhase       = 0;
+  btlMonsterHP   = 0;
+  btlM2WaveCount = 0;
+  btlMonsterLeft = BTL_M1_LEFT;
+  btlNukeMode    = false;
+  btlNukeFired   = false;
+  btlHitLocked   = false;
+  btlLastFire    = 0;
+
+  // Clear leftover torpedos
+  btlTorpedos.forEach(t => t.el.remove()); btlTorpedos = [];
+  btlStopTorpLoop();
+  btlStopMonsterMove();
+  btlHideEnterPrompt();
+
+  // Reset elements
+  btlMonster.src     = 'Sea_Monster_1.png';
+  btlMonster.style.left    = BTL_M1_LEFT + '%';
+  btlMonster.style.bottom  = '15%';
+  btlMonster.style.opacity = '1';
+  btlMonster.style.transition = '';
+  btlMonster.style.display = 'block';
+  btlMonster.classList.remove('monster-hit');
+
+  btlBoss.style.display = 'none';
+  btlBoss.style.opacity = '1';
+  btlBoss.style.transition = '';
+  btlBoss.classList.remove('boss-shake');
+
+  btlNukeExp.style.display = 'none';
+  btlNukeExp.classList.remove('nuke-expand');
+
+  btlSub.src    = 'Zacky_submarine.png';
+  btlSub.style.transition = 'none';
+  btlSub.style.left   = '-25%';
+  btlSub.style.bottom = BTL_SUB_BOTTOM + '%';
+
+  btlSkye.style.display = 'block';
+  skyeSpeechImg.style.opacity = '0'; skyeSpeechImg.style.display = 'none';
+
+  playMusic(battleMusic);
+
+  // Sub slides in with woosh
+  setTimeout(() => {
+    waterWooshSfx.currentTime = 0; waterWooshSfx.volume = 0.7;
+    waterWooshSfx.play().catch(() => {});
+    btlSub.style.transition = 'left 1.8s cubic-bezier(0.25,0.8,0.35,1)';
+    btlSub.style.left = BTL_SUB_LEFT + '%';
+
+    // Once sub settled — Skye speech for 2s, then unlock shooting
+    setTimeout(() => {
+      skyeSpeechImg.style.display = 'block';
+      requestAnimationFrame(() => { skyeSpeechImg.style.opacity = '1'; });
+      skyeTalkSfx.currentTime = 0; skyeTalkSfx.volume = 0.85;
+      skyeTalkSfx.play().catch(() => {});
+      setTimeout(() => {
+        skyeTalkSfx.pause(); skyeTalkSfx.currentTime = 0;
+        skyeSpeechImg.style.opacity = '0';
+        setTimeout(() => { skyeSpeechImg.style.display = 'none'; }, 320);
+        btlPhase     = 1;
+        btlMonsterHP = 3;
+        btlSpaceLabel.textContent = 'Shoot!';
+        showPrompt(btlSpacePrompt);
+      }, 2000);
+    }, 2000);
+  }, 500);
+}
+
+/* ═════════════════════════════════════════════════
+   END SCREEN
+════════════════════════════════════════════════= */
+const endLogo      = document.getElementById('end-logo');
+const endPawPatrol = document.getElementById('end-pawpatrol');
+const endMouseEl   = document.getElementById('end-mouse');
+
+let endMouseDir   = 1;    // 1 = going right, -1 = going left
+let endMouseLeft  = -12;  // current % left
+let endMouseTimer = null;
+
+function endMouseAnimate() {
+  clearInterval(endMouseTimer);
+  const speed = 0.4; // % per tick
+  endMouseTimer = setInterval(() => {
+    if (stage !== 'endscreen') { clearInterval(endMouseTimer); return; }
+    endMouseLeft += endMouseDir * speed;
+    endMouseEl.style.left = endMouseLeft + '%';
+    // Bounce off edges — scaleX(-1) = faces right (flipped), scaleX(1) = faces left
+    if (endMouseDir === 1 && endMouseLeft > 108) {
+      endMouseDir = -1;
+      endMouseEl.style.transform = 'scaleX(1)';   // faces left when going left
+    } else if (endMouseDir === -1 && endMouseLeft < -12) {
+      endMouseDir = 1;
+      endMouseEl.style.transform = 'scaleX(-1)';  // faces right when going right
+    }
+  }, 16);
+}
+
+function showEndScreen() {
+  spawnBubbles('end-bubbles', 20);
+  stopAllSoundsForCutscene();
+  // Hide all game screens
+  Object.values(screens).forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+  if (currentScreen) currentScreen.classList.remove('active');
+
+  stage = 'endscreen';
+  currentScreen = endScreenEl;
+  endScreenEl.style.display = 'block';
+  void endScreenEl.offsetWidth;
+  endScreenEl.classList.add('active');
+  stageTransitioning = false; inputLocked = false;
+
+  // Music
+  playMusic(endMusic);
+
+  // Mouse starts going right
+  endMouseDir  = 1;
+  endMouseLeft = -12;
+  endMouseEl.style.left = endMouseLeft + '%';
+  endMouseEl.style.transform = 'scaleX(-1)';  // start going right, facing right
+  endMouseAnimate();
+}
+
+function hideEndScreen() {
+  clearInterval(endMouseTimer);
+  endScreenEl.style.display = 'none';
+  endScreenEl.classList.remove('active');
+  showScreen('start', () => { playMusic(openMusic); });
+}
+
+/* ═════════════════════════════════════════════════
+   INPUT
+════════════════════════════════════════════════= */
+
+// ── Mouse / trackpad / touch lockout ──────────────
+// Block every pointer and scroll event so accidental
+// trackpad taps and mouse clicks do nothing in-game.
+const BLOCKED_POINTER_EVENTS = [
+  'mousedown', 'mouseup', 'click', 'dblclick',
+  'contextmenu', 'wheel', 'touchstart', 'touchend', 'touchmove'
+];
+BLOCKED_POINTER_EVENTS.forEach(evtName => {
+  document.addEventListener(evtName, e => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { capture: true, passive: false });
+});
+
+// ── Keyboard allowlist ─────────────────────────────
+// Only the keys the game actually uses are allowed through.
+// Everything else is silently swallowed so random key-bashing
+// (Tab, F-keys, letters, etc.) has no effect.
+// Escape is always allowed — the browser uses it to exit fullscreen.
+const ALLOWED_KEYS = new Set([
+  ' ',           // Spacebar
+  'Enter',
+  'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+  's', 'S',      // skip / debug
+  'r', 'R',      // restart
+  'Escape',      // exit fullscreen (browser-native)
+]);
+
+document.addEventListener('keydown', e => {
+  if (!ALLOWED_KEYS.has(e.key)) {
+    e.preventDefault();
+    return;
+  }
+}, { capture: true });
+
+document.addEventListener('keydown', e => {
+
+  // S always skips
+  if (e.key === 's' || e.key === 'S') {
+    if (videoContainer.classList.contains('visible')) {
+      sceneVideo.dispatchEvent(new Event('ended')); return;
+    }
+    if (stage === 'start')     { startCutscene();         return; }
+    if (stage === 'landing')   { landingStageComplete();  return; }
+    if (stage === 'waterpark') { waterparkStageComplete(); return; }
+    if (stage === 'beach')     { beachStageComplete();    return; }
+    if (stage === 'dock')      { dockStageComplete();     return; }
+    if (stage === 'ocean')     { oceanStageComplete();    return; }
+    if (stage === 'battle')    { battleSkip();            return; }
+    if (stage === 'endscreen') { hideEndScreen();         return; }
+    return;
+  }
+
+  if (stageTransitioning) return;
+
+  if (!musicStarted) {
+    musicStarted = true;
+    if (stage === 'start') playMusic(openMusic);
+  }
+
+  // R restarts
+  if (e.key === 'r' || e.key === 'R') {
+    if (stage === 'landing') {
+      birdNoise.pause(); birdNoise.currentTime = 0;
+      rocketLand.pause(); rocketLand.currentTime = 0;
+      showScreen('landing', () => { prepareLandingDOM(); startLandingIntroSequence(); });
+    }
+    if (stage === 'waterpark') showScreen('waterpark', initWaterpark);
+    if (stage === 'beach')     showScreen('beach', initBeach);
+    if (stage === 'dock')      showScreen('dock',  initDock);
+    if (stage === 'ocean')     showScreen('ocean', initOcean);
+    if (stage === 'battle')    showScreen('battle', initBattle);
+    return;
+  }
+
+  /* START */
+  if (stage === 'start' && e.key === ' ') { startCutscene(); return; }
+
+  /* LANDING */
+  if (stage === 'landing') {
+    if (inputLocked) return;
+    if (e.key === ' ') {
+      if (landPhase === 1) {
+        inputLocked = true; setTimeout(() => { inputLocked = false; }, INPUT_DELAY);
+        hideAllLandingPrompts();
+        zShip.src = 'Vehicle_unmanned.png'; zLand.style.display = 'block';
+        zLand.style.left = zackyLeft + '%'; zLand.style.bottom = '10%';
+        zLand.src = 'Zacky_stand.png'; landPhase = 2; showPrompt(landArrowHint);
+      } else if (landPhase === 2 && !landRubbleTalked) {
+        // Rubble talk — check Zacky is near Rubble
+        const rubbleEdge = RUBBLE_POS - 9;
+        if (zackyLeft >= rubbleEdge - 2) {
+          inputLocked = true;
+          hideAllLandingPrompts();
+          rubbleTalkSfx.currentTime = 0; rubbleTalkSfx.volume = 0.8; rubbleTalkSfx.play().catch(() => {});
+          // Show Rubble speech bubble — fade in
+          rubbleSpeechImg.style.display = 'block';
+          requestAnimationFrame(() => { rubbleSpeechImg.style.opacity = '1'; });
+          setTimeout(() => {
+            rubbleTalkSfx.pause(); rubbleTalkSfx.currentTime = 0;
+            rubbleTalkSfx.onended = null;
+            landRubbleTalked = true;
+            // Fade out speech bubble
+            rubbleSpeechImg.style.opacity = '0';
+            setTimeout(() => { rubbleSpeechImg.style.display = 'none'; }, 320);
+            // Rubble stays — no longer blocks Zacky
+            inputLocked = false;
+            showPrompt(landArrowHint);
+          }, 3000);
+        }
+      } else if (landPhase === 3) {
+        inputLocked = true; zackyJump(); setTimeout(() => { inputLocked = false; }, 920);
+      }
+      return;
+    }
+    if (e.key === 'ArrowRight' && (landPhase === 2 || landPhase === 5)) {
+      inputLocked = true; setTimeout(() => { inputLocked = false; }, INPUT_DELAY);
+      zackyLandWalk(); return;
+    }
+  }
+
+  /* WATERPARK */
+  if (stage === 'waterpark') {
+    if (inputLocked) return;
+    if (e.key === 'ArrowRight' && parkPhase === 0) {
+      if (!rightKeyHeld) { rightKeyHeld = true; startParkWalkLoop(); } return;
+    }
+    if (e.key === ' ' && parkPhase === 0 && !parkChaseTalked) {
+      // Chase talk
+      const nearChase = parkLeft >= CHASE_POS - 10;
+      if (nearChase) {
+        inputLocked = true;
+        hideAllParkPrompts();
+        chaseTalkSfx.currentTime = 0; chaseTalkSfx.volume = 0.8; chaseTalkSfx.play().catch(() => {});
+        // Show Chase speech bubble — fade in
+        chaseSpeechImg.style.display = 'block';
+        requestAnimationFrame(() => { chaseSpeechImg.style.opacity = '1'; });
+        setTimeout(() => {
+          chaseTalkSfx.pause(); chaseTalkSfx.currentTime = 0;
+          chaseTalkSfx.onended = null;
+          parkChaseTalked = true;
+          // Fade out speech bubble
+          chaseSpeechImg.style.opacity = '0';
+          setTimeout(() => { chaseSpeechImg.style.display = 'none'; }, 320);
+          // Chase stays — no longer blocks Zacky
+          inputLocked = false;
+          showPrompt(parkWalkHint);
+        }, 4000);
+      }
+      return;
+    }
+    if (e.key === ' ' && parkPhase === 1) {
+      inputLocked = true; setTimeout(() => { inputLocked = false; }, INPUT_DELAY);
+      hidePrompt(parkSpacePrompt); parkPhase = 2; zPark.src = 'Zacky_climb.png'; showPrompt(parkClimbHint); return;
+    }
+    if (e.key === 'ArrowUp' && parkPhase === 2) {
+      inputLocked = true; setTimeout(() => { inputLocked = false; }, CLIMB_DELAY); parkClimb(); return;
+    }
+    if (e.key === 'Enter' && parkPhase === 3) { inputLocked = true; waterparkStageComplete(); return; }
+  }
+
+  /* BEACH */
+  if (stage === 'beach') {
+    if (inputLocked) return;
+
+    // ── Right arrow ──
+    if (e.key === 'ArrowRight') {
+      // play blocked sound once per keypress while blocked by castle
+      if (beachPhase === 1) {
+        if (!blockedLocked) {
+          blockedLocked = true;
+          blockedSfx.currentTime = 0; blockedSfx.volume = 0.7; blockedSfx.play().catch(() => {});
+        }
+        return;
+      }
+      const rightOk = [0, 5, 9, 12, 13, 15].includes(beachPhase);
+      if (rightOk && !beachRightHeld) {
+        beachRightHeld = true; startBeachWalkLoop(1);
+      }
+      return;
+    }
+
+    // ── Left arrow ──
+    if (e.key === 'ArrowLeft') {
+      const leftOk = [1, 2, 6].includes(beachPhase);
+      if (leftOk) {
+        // Phase 1: Zacky just hit castle, now needs to walk left — start walking left mode
+        if (beachPhase === 1) beachPhase = 2;
+        if (!beachLeftHeld) { beachLeftHeld = true; startBeachWalkLoop(-1); }
+      }
+      return;
+    }
+
+    // ── Up arrow (climb up) ──
+    if (e.key === 'ArrowUp' && beachPhase === 4) {
+      inputLocked = true; setTimeout(() => { inputLocked = false; }, CLIMB_DELAY);
+      beachClimbUp(); return;
+    }
+
+    // ── Down arrow (climb down) ──
+    if (e.key === 'ArrowDown' && beachPhase === 8) {
+      inputLocked = true; setTimeout(() => { inputLocked = false; }, CLIMB_DELAY);
+      beachClimbDown(); return;
+    }
+
+    // ── Spacebar ──
+    if (e.key === ' ') {
+
+      // Phase 3: at tower base — start climbing up
+      if (beachPhase === 3) {
+        inputLocked = true; setTimeout(() => { inputLocked = false; }, INPUT_DELAY);
+        hideAllBeachPrompts();
+        beachPhase = 4; zBeach.src = 'Zacky_climb.png';
+        showPrompt(bchUpHint); return;
+      }
+
+      // Phase 7: at tower top — start climbing down AND take first step immediately
+      if (beachPhase === 7) {
+        hideAllBeachPrompts();
+        beachPhase = 8; zBeach.src = 'Zacky_climb.png';
+        showPrompt(bchDownHint);
+        // Take one step down immediately on spacebar press
+        inputLocked = true;
+        setTimeout(() => {
+          beachClimbDown();
+          setTimeout(() => { inputLocked = false; }, CLIMB_DELAY);
+        }, 80);
+        return;
+      }
+
+      // Phase 10: first dig — castle 1 → 2
+      if (beachPhase === 10) {
+        beachPhase = 10; // lock until dig complete
+        doShovelAction(() => {
+          sandcastle.src = 'sandcastle_2.png';
+          sandcastle.style.height = '28vh';  // larger than castle 1 (22vh)
+          digCount = 1;
+          beachPhase = 11;
+          bchSpaceLabel.textContent = 'Dig again!';
+          showPrompt(bchSpacePrompt);
+        }); return;
+      }
+
+      // Phase 11: second dig — castle 2 → 3
+      if (beachPhase === 11) {
+        doShovelAction(() => {
+          sandcastle.src = 'sandcastle_3.png';
+          sandcastle.style.height = '36vh';  // larger than castle 2 (28vh)
+          digCount = 2;
+          beachPhase = 12;
+          bchSpaceLabel.textContent = 'Final dig!';
+          showPrompt(bchSpacePrompt);
+        }); return;
+      }
+
+      // Phase 12: third dig — castle collapses!
+      if (beachPhase === 12) {
+        doShovelAction(() => {
+          castleCollapse();
+        }); return;
+      }
+
+      // Phase 14: at terminal — end stage
+      if (beachPhase === 14) {
+        inputLocked = true; beachStageComplete(); return;
+      }
+    }
+  }
+
+  /* DOCK */
+  if (stage === 'dock') {
+    if (inputLocked) return;
+
+    // Spacebar — jump into vehicle (phase 1)
+    if (e.key === ' ' && dockPhase === 1) {
+      inputLocked = true;
+      dockJump(); return;
+    }
+
+    // Enter — start engines (phase 2)
+    if (e.key === 'Enter' && dockPhase === 2) {
+      inputLocked = true; dockStageComplete(); return;
+    }
+  }
+
+  /* BATTLE */
+  if (stage === 'battle') {
+    if (inputLocked) return;
+
+    // Spacebar — fire torpedo (or nuke if in nuke mode)
+    if (e.key === ' ') {
+      btlFireTorpedo(); return;
+    }
+
+    // Enter — switch to nuke mode (phase 5 only)
+    if (e.key === 'Enter' && btlPhase === 5) {
+      btlActivateNuke(); return;
+    }
+  }
+
+  /* END SCREEN */
+  if (stage === 'endscreen') {
+    if (e.key === 'Enter' || e.key === ' ') { hideEndScreen(); return; }
+  }
+
+  /* OCEAN */
+  if (stage === 'ocean') {
+    if (inputLocked) return;
+
+    // Up arrow — move sub to top position
+    if (e.key === 'ArrowUp' && oceanSubPos !== 'top') {
+      oceanMoveUp(); return;
+    }
+    // Down arrow — move sub to bottom position
+    if (e.key === 'ArrowDown' && oceanSubPos !== 'bottom') {
+      oceanMoveDown(); return;
+    }
+  }
+});
+
+// Key release — stop walk loops
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowRight') {
+    rightKeyHeld  = false;   // waterpark
+    beachRightHeld = false;
+    dockRightHeld  = false;
+    blockedLocked  = false;  // allow blocked sound on next keypress
+    stopParkWalkLoop();
+    stopBeachWalkLoop();
+    stopDockWalkLoop();
+    if (stage === 'waterpark' && parkPhase === 0) zPark.src  = 'Zacky_stand.png';
+    if (stage === 'beach'     && [0,5,9,12,13,15].includes(beachPhase)) { zBeach.src = 'Zacky_stand.png'; zBeach.style.transform = 'scaleX(1)'; }
+  }
+  if (e.key === 'ArrowLeft') {
+    beachLeftHeld = false;
+    stopBeachWalkLoop();
+    if (stage === 'beach' && [2,6].includes(beachPhase)) { zBeach.src = 'Zacky_stand.png'; zBeach.style.transform = 'scaleX(-1)'; }
+  }
+});
+
+/* ═════════════════════════════════════════════════
+   CUTSCENE → LANDING
+════════════════════════════════════════════════= */
+function startCutscene() {
+  // Enter fullscreen when the game begins
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+  const landingEl = screens['landing'];
+  prepareLandingDOM();
+  landingEl.style.display = 'block';
+  landingEl.style.opacity = '0';
+
+  stageTransitioning = true; inputLocked = true;
+  stopAllSoundsForCutscene();
+
+  videoContainer.classList.add('visible');
+  sceneVideo.src = 'Opening_Scene_1.mp4';
+  sceneVideo.currentTime = 0;
+  sceneVideo.play().catch(() => {});
+
+  sceneVideo.onended = () => {
+    videoContainer.classList.remove('visible');
+    sceneVideo.onended = null;
+
+    Object.values(screens).forEach(s => {
+      if (s !== landingEl) { s.style.display = 'none'; s.classList.remove('active'); }
+    });
+    landingEl.style.display = '';
+    landingEl.style.opacity = '';
+    landingEl.classList.remove('active');
+    currentScreen = landingEl; stage = 'landing';
+
+    setTimeout(() => {
+      landingEl.classList.add('active');
+      setTimeout(() => {
+        stageTransitioning = false; inputLocked = false;
+        startLandingIntroSequence();
+      }, 400);
+    }, 30);
+  };
+}
+
+/* ═════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════= */
+showScreen('start', () => { playMusic(openMusic); });
+openMusic.volume = 0.5;
+openMusic.play().catch(() => {});
+</script>
+</body>
+</html>
