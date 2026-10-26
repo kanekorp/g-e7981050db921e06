@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <title>Zacky's Water Adventure!</title>
 <style>
@@ -112,7 +113,7 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
   }
   .key-prompt span {
-    color: #fff; font-size: 1.8em;
+    color: #fff; font-size: 52px;
     text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
   }
   @keyframes keyPulse {
@@ -134,7 +135,7 @@
     animation: arrowBob 0.9s ease-in-out infinite;
   }
   .arrow-hint span {
-    color: #fff; font-size: 1.6em;
+    color: #fff; font-size: 48px;
     text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
   }
   @keyframes arrowBob   { 0%,100% { transform: translateX(0);  } 50% { transform: translateX(10px);  } }
@@ -209,13 +210,13 @@
   /* ─── OCEAN ELEMENTS ─── */
   #ocean-sub {
     position: absolute;
-    height: 297px; width: auto; z-index: 5;
+    height: 440px; width: auto; z-index: 5;
     transition: left 1.8s cubic-bezier(0.25,0.8,0.35,1),
                 bottom 0.6s cubic-bezier(0.25,0.8,0.35,1);
   }
   .ocean-obj {
     position: absolute;
-    height: 130px; width: auto; z-index: 4;
+    height: 200px; width: auto; z-index: 4;
     display: none;
     transition: left 10s linear;
   }
@@ -303,7 +304,7 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
   }
   #battle-enter-prompt span {
-    color: #fff; font-size: 1.8em;
+    color: #fff; font-size: 52px;
     text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
   }
 
@@ -665,6 +666,13 @@
 <!-- ════════════════════════ SCRIPT ════════════════════════ -->
 <script>
 
+window.STAGE_SCALE = 1;
+// Convert a screen-space rect to 1920x1080 stage coordinates (handles letterbox bars)
+function stageRect(el) {
+  var c = document.getElementById('game-canvas').getBoundingClientRect();
+  var r = el.getBoundingClientRect(), k = c.width / 1920 || 1;
+  return { left:(r.left-c.left)/k, right:(r.right-c.left)/k, top:(r.top-c.top)/k, bottom:(r.bottom-c.top)/k, width:r.width/k, height:r.height/k };
+}
 (function() {
   var DESIGN_W = 1920, DESIGN_H = 1080;
   var canvas = document.getElementById('game-canvas');
@@ -673,6 +681,7 @@
     var scaleY = window.innerHeight / DESIGN_H;
     var scale  = Math.min(scaleX, scaleY);
     canvas.style.transform = 'scale(' + scale + ')';
+    window.STAGE_SCALE = scale;
   }
   resize();
   window.addEventListener('resize', resize);
@@ -1434,7 +1443,7 @@ function initBeach() {
   hideAllBeachPrompts();
 
   sandcastle.src = 'sandcastle_1.png';
-  sandcastle.style.height = '22vh';  // reset to base size on restart
+  sandcastle.style.height = '238px';  // reset to base size on restart
   bchTerminal.src = 'Terminal.png';   // reset terminal image on restart
   callSfx.pause(); callSfx.currentTime = 0;
   shovelItem.style.display = 'none';
@@ -1637,8 +1646,8 @@ const oceanDownHint = document.getElementById('ocean-down-hint');
 
 // Sub vertical positions
 const OCN_SUB_LEFT   = 5;    // % left — sub stays on left side
-const OCN_TOP_BOT    = 65;   // % bottom — top lane
-const OCN_BOTTOM_BOT = 25;   // % bottom — bottom lane
+const OCN_TOP_BOT    = 34;   // % bottom — top lane (sub's hull stays below the surface waves)
+const OCN_BOTTOM_BOT = 0;    // % bottom — bottom lane
 const OCN_CATCH_LEFT = 12;   // % left threshold — object caught when it reaches here
 
 let oceanPhase  = 0;
@@ -1677,7 +1686,7 @@ function launchObject(obj, lane, onCatch) {
   // Position off-screen right, at correct vertical lane
   obj.style.transition = 'none';
   obj.style.left   = '110%';
-  obj.style.bottom = laneBotPct + '%';
+  obj.style.bottom = (laneBotPct + 11) + '%';  // centre item on the sub's visible hull
   obj.style.opacity = '1';
   obj.style.display = 'block';
 
@@ -1693,8 +1702,8 @@ function launchObject(obj, lane, onCatch) {
   let caught = false;
   oceanCatchTimer = setInterval(() => {
     if (caught) return;
-    const rect = obj.getBoundingClientRect();
-    const pctLeft = (rect.left / window.innerWidth) * 100;
+    const rect = stageRect(obj);
+    const pctLeft = (rect.left / 1920) * 100;
 
     if (pctLeft <= OCN_CATCH_LEFT + 6) {  // object entering catch zone (closer to sub)
       const subMatches = (lane === 'top')   ? (oceanSubPos === 'top')
@@ -1913,8 +1922,8 @@ function btlTorpLoop() {
 
       // Nuke fades when it hits boss
       if (t.isNuke) {
-        const bossRect    = btlBoss.getBoundingClientRect();
-        const torpRect    = t.el.getBoundingClientRect();
+        const bossRect    = stageRect(btlBoss);
+        const torpRect    = stageRect(t.el);
         if (torpRect.left < bossRect.right && torpRect.right > bossRect.left &&
             torpRect.top  < bossRect.bottom && torpRect.bottom > bossRect.top) {
           toRemove.push(i);
@@ -1925,8 +1934,8 @@ function btlTorpLoop() {
 
       // Boss phase — first torpedo fades on contact
       if (btlPhase === 5) {
-        const bossRect = btlBoss.getBoundingClientRect();
-        const torpRect = t.el.getBoundingClientRect();
+        const bossRect = stageRect(btlBoss);
+        const torpRect = stageRect(t.el);
         if (torpRect.left < bossRect.right && torpRect.right > bossRect.left &&
             torpRect.top  < bossRect.bottom && torpRect.bottom > bossRect.top) {
           // Fade torpedo, show enter prompt
@@ -1940,8 +1949,8 @@ function btlTorpLoop() {
 
       // Regular monster hit detection (skip if M2 is invulnerable during dodge)
       if (btlPhase >= 1 && btlPhase <= 4 && !btlHitLocked && !btlM2Invulnerable) {
-        const mRect   = btlMonster.getBoundingClientRect();
-        const tRect   = t.el.getBoundingClientRect();
+        const mRect   = stageRect(btlMonster);
+        const tRect   = stageRect(t.el);
         if (tRect.left < mRect.right && tRect.right > mRect.left &&
             tRect.top  < mRect.bottom && tRect.bottom > mRect.top) {
           toRemove.push(i);
@@ -2108,10 +2117,10 @@ function btlStartMonsterMove() {
     // Dodge check: scan for incoming torpedos
     if (!btlM2Dodging && !btlM2DodgeLocked && btlTorpedos.length > 0) {
       // Look for a torpedo heading toward the monster
-      const mRect = btlMonster.getBoundingClientRect();
+      const mRect = stageRect(btlMonster);
       for (const t of btlTorpedos) {
         if (t.isNuke) continue;
-        const tRect = t.el.getBoundingClientRect();
+        const tRect = stageRect(t.el);
         // Torpedo approaching from left, within 500px (triggers earlier)
         const approaching = tRect.right < mRect.left && (mRect.left - tRect.right) < 500;
         const sameLevel   = Math.abs(tRect.top - mRect.top) < mRect.height * 1.2;
@@ -2128,10 +2137,10 @@ function btlStartMonsterMove() {
           // Watch for torpedo to pass under, then come back down
           const dodgeCheck = setInterval(() => {
             if (!btlM2Dodging) { clearInterval(dodgeCheck); return; }
-            const mR2 = btlMonster.getBoundingClientRect();
+            const mR2 = stageRect(btlMonster);
             const stillThreat = btlTorpedos.some(t2 => {
               if (t2.isNuke) return false;
-              const tR2 = t2.el.getBoundingClientRect();
+              const tR2 = stageRect(t2.el);
               return tR2.right > mR2.left - 20 && tR2.left < mR2.right + 150;
             });
             if (!stillThreat) {
@@ -2189,8 +2198,8 @@ function btlNukeHitBoss() {
   btlHideEnterPrompt();
 
   // Position nuke explosion over boss centre
-  const bossRect   = btlBoss.getBoundingClientRect();
-  const battleRect = document.getElementById('battle').getBoundingClientRect();
+  const bossRect   = stageRect(btlBoss);
+  const battleRect = stageRect(document.getElementById('battle'));
   const expLeft    = bossRect.left - battleRect.left + bossRect.width / 2;
   const expTop     = bossRect.top  - battleRect.top  + bossRect.height / 2;
   btlNukeExp.style.left    = expLeft + 'px';
@@ -2608,7 +2617,7 @@ document.addEventListener('keydown', e => {
         beachPhase = 10; // lock until dig complete
         doShovelAction(() => {
           sandcastle.src = 'sandcastle_2.png';
-          sandcastle.style.height = '28vh';  // larger than castle 1 (22vh)
+          sandcastle.style.height = '302px';  // larger than castle 1 (238px)
           digCount = 1;
           beachPhase = 11;
           bchSpaceLabel.textContent = 'Dig again!';
@@ -2620,7 +2629,7 @@ document.addEventListener('keydown', e => {
       if (beachPhase === 11) {
         doShovelAction(() => {
           sandcastle.src = 'sandcastle_3.png';
-          sandcastle.style.height = '36vh';  // larger than castle 2 (28vh)
+          sandcastle.style.height = '389px';  // larger than castle 2 (302px)
           digCount = 2;
           beachPhase = 12;
           bchSpaceLabel.textContent = 'Final dig!';

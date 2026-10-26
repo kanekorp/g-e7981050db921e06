@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <title>Zacky's Paw Patrol Adventure!</title>
 <style>
@@ -56,6 +57,11 @@ body {
     text-shadow: 1px 1px 4px white;
 }
 
+#moon-car { position:absolute; width:440px; left:50%; transform:translateX(-50%); bottom:330px; }
+#moon-text { position:absolute; left:0; right:0; bottom:20px; text-align:center; }
+#moon-text h1 { font-size:72px; margin:0 0 10px; }
+#intro h1 { font-size:80px; margin:10px 0; }
+#moon-text p, #intro p { font-size:52px; margin:8px 0; font-weight:bold; }
 #transition-video-container {
     position: fixed;
     top: 0;
@@ -336,14 +342,19 @@ h1.screen-title {
 </div>
 
 <div id="moon" class="screen">
-    <img src="zacky_paw.png" style="width:500px; max-width:70%;">
+    <img id="moon-car" src="zacky_paw.png">
+    <div id="moon-text">
     <h1>Zacky Made It to the Moon! 🌕🚀</h1>
     <p>You're a super hero, Zacky!</p>
     <p>Press ENTER to play again</p>
+    </div>
 </div>
 
 </div>
 <script>(function(){function f(){var k=Math.min(innerWidth/1920,innerHeight/1080);document.getElementById("stage").style.transform="scale("+k+")";}addEventListener("resize",f);f();})();</script>
+<script>
+['paw_background.jpg','dinosaur_background.jpg','Launch_Background.jpg','space_background.jpg','space_collect_background.jpg','battle_background.jpg','moon_background.jpg','zacky_side.png','dinosaur.png','car.png','tower.png','rocket_unmanned.png','rocket_manned.png','Zacky_stand.png','Zacky_climb.png','zacky_space.png','zacky_up.png','zacky_paw.png','mouse_space.png','monster_battle_boss.png'].forEach(function(u){var i=new Image();i.src=u;if(i.decode)i.decode().catch(function(){});(window._pre=window._pre||[]).push(i);});
+</script>
 <script>
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const dinoRoar = document.getElementById('dinoRoar');
@@ -463,13 +474,18 @@ function playTransitionVideo(videoSrc, nextStage) {
     
     // Reset and play video
     transitionVideo.currentTime = 0;
-    transitionVideo.play().catch(e => console.log('Video play failed:', e));
-    
-    // When video ends, transition to next stage
-    transitionVideo.onended = () => {
+    let videoDone = false;
+    const finishVideo = () => {
+        if (videoDone) return;
+        videoDone = true;
+        transitionVideo.onended = transitionVideo.onerror = null;
+        transitionVideo.pause();
         transitionVideoContainer.style.display = 'none';
         showStage(nextStage);
     };
+    transitionVideo.onended = finishVideo;
+    transitionVideo.onerror = finishVideo;
+    transitionVideo.play().catch(e => { console.log('Video play failed, skipping:', e); finishVideo(); });
 }
 
 function engineSound(start, end, time) {
@@ -976,7 +992,7 @@ function showStage(s) {
             if (!existingMouse) {
                 const moonMouse = document.createElement('img');
                 moonMouse.src = 'mouse_space.png';
-                moonMouse.style.width = '140px';
+                moonMouse.style.cssText = 'position:absolute;width:200px;left:64%;bottom:300px;';
                 moon.appendChild(moonMouse);
             }
         }
@@ -1207,7 +1223,7 @@ document.addEventListener('keydown', e => {
             if (!reachedDino) {
                 dinoLeft += 10;
                 zDino.style.left = dinoLeft + '%';
-                if (dinoLeft >= 65) {
+                if (dinoLeft >= 55) {  // stop clear of the T-rex (stage coords)
                     reachedDino = true;
                     // Play dino roar and shake dino when reaching
                     dinoRoar.currentTime = 0;
@@ -1227,7 +1243,7 @@ document.addEventListener('keydown', e => {
             
             playMovementSound(drivingSound, 'driving-up');
             upPresses++;
-            dinoBottom += 15;
+            dinoBottom += 20;  // 2 presses -> 50%: wheels ~48px above head top
             zDino.style.bottom = dinoBottom + '%';
         }
         return;
@@ -1248,7 +1264,9 @@ document.addEventListener('keydown', e => {
                 launchZackyElement.style.left = launchZackyLeft + '%';
             }
             
-            if (launchZackyLeft >= 62) {
+            if (launchZackyLeft >= 52) {
+                launchZackyLeft = 59;  // centre 200px Zacky on the tower ladder
+                if (launchZackyElement) launchZackyElement.style.left = '59%';
                 launchPhase = 2;
                 launchTitle.textContent = 'Press Space to Climb!';
             }
