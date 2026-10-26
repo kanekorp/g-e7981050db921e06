@@ -458,7 +458,12 @@ function playMovementSound(sound, movementType) {
     }, 2000);
 }
 
+let transitionVideoActive = false;
 function playTransitionVideo(videoSrc, nextStage) {
+    // Guard: only one transition video at a time (ignore repeated calls)
+    if (transitionVideoActive) return;
+    transitionVideoActive = true;
+
     // Lock all inputs
     stageTransitioning = true;
     inputLocked = true;
@@ -468,24 +473,55 @@ function playTransitionVideo(videoSrc, nextStage) {
     
     // Show video container
     transitionVideoContainer.style.display = 'flex';
-    
-    // Set video source
-    transitionVideo.src = videoSrc;
-    
-    // Reset and play video
-    transitionVideo.currentTime = 0;
+
     let videoDone = false;
-    const finishVideo = () => {
+    let timeoutId = null;
+    const v = transitionVideo;
+    const cleanup = () => {
+        v.removeEventListener('canplay', onCanPlay);
+        v.removeEventListener('ended', finishVideo);
+        v.removeEventListener('error', onError);
+        clearTimeout(timeoutId);
+    };
+    function finishVideo() {
         if (videoDone) return;
         videoDone = true;
-        transitionVideo.onended = transitionVideo.onerror = null;
-        transitionVideo.pause();
+        cleanup();
+        v.pause();
         transitionVideoContainer.style.display = 'none';
+        transitionVideoActive = false;
         showStage(nextStage);
-    };
-    transitionVideo.onended = finishVideo;
-    transitionVideo.onerror = finishVideo;
-    transitionVideo.play().catch(e => { console.log('Video play failed, skipping:', e); finishVideo(); });
+    }
+    function onError() {
+        console.log('Transition video error, skipping');
+        finishVideo();
+    }
+    // Fallback only if the video never becomes playable (real failure)
+    const armTimeout = (ms) => { clearTimeout(timeoutId); timeoutId = setTimeout(() => { console.log('Transition video timed out, skipping'); finishVideo(); }, ms); };
+    function onCanPlay() {
+        v.removeEventListener('canplay', onCanPlay);
+        clearTimeout(timeoutId);
+        v.play().catch(e => {
+            if (videoDone) return;
+            if (e && e.name === 'AbortError') {
+                // Interrupted play is not a failure: retry once it is ready again
+                v.addEventListener('canplay', onCanPlay);
+                armTimeout(8000);
+            } else {
+                console.log('Transition video play failed, skipping:', e);
+                finishVideo();
+            }
+        });
+    }
+    v.addEventListener('ended', finishVideo);
+    v.addEventListener('error', onError);
+    v.addEventListener('canplay', onCanPlay);
+    armTimeout(8000);
+
+    // Load the requested clip (drop the static <source> so it can't race us)
+    v.querySelectorAll('source').forEach(n => n.remove());
+    v.src = videoSrc;
+    v.load();
 }
 
 function engineSound(start, end, time) {

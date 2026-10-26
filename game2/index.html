@@ -113,8 +113,8 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
   }
   .key-prompt span {
-    color: #fff; font-size: 52px;
-    text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
+    color: #fff; font-size: 52px; font-weight: bold;
+    -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 0 4px #000, 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 4px 10px rgba(0,0,0,0.9); text-align: center; white-space: nowrap;
   }
   @keyframes keyPulse {
     0%,100% { opacity: 1; transform: scale(1); }
@@ -225,7 +225,7 @@
   #battle-sub {
     position: absolute;
     left: 5%; bottom: 15%;
-    height: 292px; width: auto; z-index: 5;
+    height: 440px; width: auto; z-index: 5;
     transition: left 1.8s cubic-bezier(0.25,0.8,0.35,1);
   }
   #battle-skye {
@@ -304,8 +304,20 @@
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
   }
   #battle-enter-prompt span {
-    color: #fff; font-size: 52px;
-    text-shadow: 2px 2px 6px #000; text-align: center; white-space: nowrap;
+    color: #fff; font-size: 52px; font-weight: bold;
+    -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 0 4px #000, 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 4px 10px rgba(0,0,0,0.9); text-align: center; white-space: nowrap;
+  }
+
+  /* Big "Press Spacebar" / "Press Enter" label under each key-cap */
+  .key-label {
+    color: #fff; font-size: 52px; font-weight: 900; letter-spacing: 1px;
+    white-space: nowrap; text-align: center;
+    -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 0 4px #000, 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 4px 10px rgba(0,0,0,0.9);
+  }
+  .key-prompt img, #battle-enter-prompt img { opacity: 1; }
+  @keyframes keyPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.75; transform: scale(0.92); }
   }
 
   /* ─── LANDING EXTRAS ─── */
@@ -421,9 +433,11 @@
     animation: blink 2s ease-in-out infinite;
   }
   #end-congrats p {
-    font-size: 1.3em; margin-top: 8px; color: #000;
-    animation: blink 2.4s ease-in-out infinite;
+    font-size: 56px; margin-top: 8px; color: #fff; font-weight: bold;
+    -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 0 4px #000, 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 4px 10px rgba(0,0,0,0.9);
+    animation: softBlink 2.4s ease-in-out infinite;
   }
+  @keyframes softBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.8; } }
   #end-mouse {
     position: absolute; bottom: 8%;
     height: 151px; width: auto; z-index: 6;
@@ -687,6 +701,16 @@ function stageRect(el) {
   window.addEventListener('resize', resize);
   document.addEventListener('fullscreenchange', function() { setTimeout(resize, 100); });
 })();
+
+/* ═══════════════ KEY LABELS ═══════════════ */
+document.querySelectorAll('.key-prompt img, #battle-enter-prompt img').forEach(function(img) {
+  var k = img.getAttribute('alt');
+  if (k !== 'Spacebar' && k !== 'Enter') return;
+  var b = document.createElement('b');
+  b.className = 'key-label';
+  b.textContent = 'Press ' + k;
+  img.insertAdjacentElement('afterend', b);
+});
 
 /* ═══════════════ BUBBLES ═══════════════ */
 (function() {
@@ -2009,8 +2033,9 @@ function btlSpawnTorpedo(isNuke) {
   el.src = isNuke ? 'torpedo_nuke.png' : 'torpedo.png';
   el.className = 'btl-torpedo';
   // Spawn from right edge of sub
-  const startLeft = BTL_SUB_LEFT + 8;
-  const startBot  = BTL_SUB_BOTTOM + 4;
+  // Scaled with the 440px sub (was +8/+4 for 292px): nose of the visible hull
+  const startLeft = BTL_SUB_LEFT + 12;
+  const startBot  = BTL_SUB_BOTTOM + 6;
   el.style.left   = startLeft + '%';
   el.style.bottom = startBot + '%';
   el.style.opacity = '1';
