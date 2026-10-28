@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Zacky's Lava Quest</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    width: 100vw; height: 100vh;
+  }
+
+  /* ─── GAME CANVAS: always 1920x1080, scaled to fit any screen ─── */
+  #game-canvas {
+    position: relative;
+    width: 1920px; height: 1080px;
+    overflow: hidden;
+    transform-origin: center center;
+    background: #1a0500;
+    flex-shrink: 0;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen {
+    width: 100%; height: 100%;
+    position: absolute; inset: 0;
+    display: none; opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    background-size: cover; background-position: center;
+  }
+  .screen.active { display: block; opacity: 1; }
+
+  /* ─── TITLE SCREEN ─── */
+  #title { background-image: url('lava_title.jpg'); }
+  .press {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); color: #fff; border: 5px solid #ffd84d; border-radius: 40px;
+    padding: 14px 44px; font-size: 54px; text-shadow: 2px 2px 0 #000; white-space: nowrap;
+  }
+  #title .press { bottom: 150px; animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+  /* ─── LEVEL 1 ─── */
+  #level1 { background: #1a0500 url('lava_level1.jpg') center/cover no-repeat; }
+  #level1 .abs { position: absolute; user-select: none; -webkit-user-drag: none; }
+  .platform { height: 80px; }
+  #zacky.blink { animation: blinkz 0.2s steps(2) infinite; }
+  @keyframes blinkz { 50% { opacity: 0.3; } }
+  #flash { position: absolute; inset: 0; background: rgba(255,60,0,0.45); opacity: 0; pointer-events: none; z-index: 40; transition: opacity 0.5s; }
+  #flash.on { opacity: 1; transition: none; }
+  .flag { width: 8px; height: 110px; background: #ddd; border-radius: 4px; z-index: 3; }
+  .flag::after { content: ''; position: absolute; left: 8px; top: 6px; border-left: 50px solid #888; border-top: 22px solid transparent; border-bottom: 22px solid transparent; }
+  .flag.on::after { border-left-color: #3ddc84; }
+  #hud { position: absolute; left: 40px; top: 30px; z-index: 30; display: flex; align-items: center; gap: 14px; background: rgba(0,0,0,0.55); border: 4px solid #ffd84d; border-radius: 40px; padding: 8px 30px 8px 22px; color: #fff; font-size: 48px; text-shadow: 2px 2px 0 #000; }
+  #hud img { width: 41px; height: 48px; }
+  #hint { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 30; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 12px 40px; font-size: 48px; text-shadow: 2px 2px 0 #000; white-space: nowrap; }
+  #hint.on { opacity: 1; }
+  .gem.got { display: none; }
+  .door.locked { filter: grayscale(0.85) brightness(0.55); }
+  .door.open { filter: drop-shadow(0 0 28px #ffd84d); }
+  .tip { z-index: 6; font-size: 34px; color: #fff; background: rgba(0,0,0,0.6); border: 4px solid #ffd84d; border-radius: 28px; padding: 4px 22px; text-shadow: 2px 2px 0 #000; white-space: nowrap; transform: translateX(-50%); }
+  #zacky { position: absolute; left: 0; top: 0; width: 133px; height: 200px; transform-origin: 66px 166px; z-index: 20; will-change: transform; }
+
+  /* ─── END OF LEVEL ─── */
+  #transition { background: #000 url('lava_title_clean.jpg') center/cover no-repeat; }
+  #tvid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; display: none; }
+  #complete { background: #1a0500 url('lava_title_clean.jpg') center/cover no-repeat; text-align: center; }
+  #complete h1 { position: absolute; left: 0; right: 0; top: 250px; font-size: 140px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; }
+  #complete .sub { position: absolute; left: 0; right: 0; top: 440px; font-size: 64px; color: #fff; text-shadow: 3px 3px 0 #000; }
+  #complete .press { bottom: 190px; animation: blink 1.4s ease-in-out infinite; }
+  #zacky { transition: opacity 0.5s; }
+  #loading { display: block; opacity: 1; background: #1a0500; color: #ffd84d; font-size: 56px; text-align: center; padding-top: 480px; }
+</style>
+</head>
+<body>
+<div id="game-canvas">
+  <div id="loading" class="screen">Loading…</div>
+
+  <!-- ════════════════════ TITLE ════════════════════ -->
+  <div id="title" class="screen">
+    <div class="press">Press Enter to start</div>
+  </div>
+
+  <!-- ════════════════════ TRANSITION + LEVEL COMPLETE ════════════════════ -->
+  <div id="transition" class="screen"><video id="tvid" playsinline preload="auto"></video></div>
+  <div id="complete" class="screen">
+    <h1>Level 1 complete!</h1>
+    <div class="sub">You found all 5 gems!</div>
+    <div class="press">Press Enter</div>
+  </div>
+
+  <!-- ════════════════════ LEVEL 1 ════════════════════ -->
+  <div id="level1" class="screen">
+    <div id="world"></div>
+    <div id="hud"><img src="gem.png" alt=""><span id="gemCount">0 / 5</span></div>
+    <div id="hint">Collect all 5 gems to open the door!</div>
+    <img id="zacky" src="Zacky_stand.png" alt="Zacky">
+    <div id="flash"></div>
+  </div>
+</div>
+
+<audio id="titleMusic" src="Lava_Title_Music.mp3" loop preload="auto"></audio>
+<audio id="levelMusic" src="Lava_Level_Music.mp3" loop preload="auto"></audio>
+<audio id="walkSfx" src="walking.mp3" loop preload="auto"></audio>
+<audio id="jumpSfx" src="jump.mp3" preload="auto"></audio>
+<audio id="hissSfx" src="lava_hiss.mp3" preload="auto"></audio>
+<audio id="completeSfx" src="level_complete.mp3" preload="auto"></audio>
+<audio id="gemSfx" src="gem_collect.mp3" preload="auto"></audio>
+
+<script>
+/* ═══════════════ STAGE SCALING (same as games 1 and 2) ═══════════════ */
+window.STAGE_SCALE = 1;
+(function () {
+  var DESIGN_W = 1920, DESIGN_H = 1080;
+  var canvas = document.getElementById('game-canvas');
+  function resize() {
+    var scale = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
+    canvas.style.transform = 'scale(' + scale + ')';
+    window.STAGE_SCALE = scale;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', function () { setTimeout(resize, 100); });
+})();
+
+/* ═══════════════ INPUT: keyboard allowlist, pointer lockout ═══════════════ */
+['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchend', 'touchmove']
+  .forEach(function (evtName) {
+    document.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); },
+      { capture: true, passive: false });
+  });
+
+const ALLOWED_KEYS = new Set([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape']);
+const keys = {};            // currently held keys
+const keyHandlers = [];     // fn(key, isRepeat) called on each keydown
+document.addEventListener('keydown', function (e) {
+  if (!ALLOWED_KEYS.has(e.key)) { e.preventDefault(); return; }
+  if (e.key !== 'Escape') e.preventDefault();      // page never scrolls
+  keys[e.key] = true;
+  unlockAudio();
+  keyHandlers.forEach(function (fn) { fn(e.key, e.repeat); });
+}, { capture: true });
+document.addEventListener('keyup', function (e) { delete keys[e.key]; });
+window.addEventListener('blur', function () { for (var k in keys) delete keys[k]; });
+
+/* ═══════════════ AUDIO UNLOCK: sound only starts after the first key press ═══════════════ */
+let audioUnlocked = false;
+const audioUnlockHandlers = [];
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  audioUnlockHandlers.forEach(function (fn) { fn(); });
+}
+
+/* ═══════════════ PRELOADER ═══════════════ */
+const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png'];
+function preload(urls) {
+  var jobs = urls.map(function (u) {
+    return new Promise(function (resolve) {
+      var i = new Image();
+      i.onload = i.onerror = function () { resolve(); };
+      i.src = u;
+      (window._pre = window._pre || []).push(i);
+    });
+  });
+  // never hang on a slow or missing file
+  var timeout = new Promise(function (resolve) { setTimeout(resolve, 6000); });
+  return Promise.race([Promise.all(jobs), timeout]);
+}
+preload(PRELOAD).then(function () {
+  document.getElementById('loading').classList.remove('active');
+  document.getElementById('loading').style.display = 'none';
+  showScreen('title', function () { playMusic(titleMusic); });
+  window.gameReady = true;
+});
+
+/* ═══════════════ MUSIC ═══════════════ */
+const titleMusic = document.getElementById('titleMusic');
+const levelMusic = document.getElementById('levelMusic');
+const walkSfx = document.getElementById('walkSfx');
+const jumpSfx = document.getElementById('jumpSfx');
+const hissSfx = document.getElementById('hissSfx');
+const gemSfx = document.getElementById('gemSfx');
+const completeSfx = document.getElementById('completeSfx');
+function sfx(a, vol) { if (!audioUnlocked) return; a.currentTime = 0; a.volume = vol || 0.6; a.play().catch(function () {}); }
+let currentMusic = null;
+function playMusic(track) {
+  if (currentMusic && currentMusic !== track) { currentMusic.pause(); currentMusic.currentTime = 0; }
+  currentMusic = track;
+  if (!track || !audioUnlocked) return;       // nothing plays before the first key press
+  track.volume = 0.5;
+  track.play().catch(function () {});
+}
+function stopMusic() {
+  if (currentMusic) { currentMusic.pause(); currentMusic.currentTime = 0; currentMusic = null; }
+}
+// first key press: start whatever music belongs to the current screen
+audioUnlockHandlers.push(function () { if (currentMusic) { var t = currentMusic; currentMusic = null; playMusic(t); } });
+
+/* ═══════════════ SCREENS ═══════════════ */
+const screens = { title: document.getElementById('title'), level1: document.getElementById('level1'),
+  transition: document.getElementById('transition'), complete: document.getElementById('complete') };
+let stage = 'loading', screenLocked = false;
+function showScreen(name, onReady) {
+  screenLocked = true;
+  var cur = document.querySelector('.screen.active');
+  if (cur) cur.classList.remove('active');
+  setTimeout(function () {
+    Object.values(screens).forEach(function (el) { el.style.display = 'none'; el.classList.remove('active'); });
+    var el = screens[name];
+    el.style.display = 'block';
+    stage = name;
+    setTimeout(function () { el.classList.add('active'); }, 30);
+    if (onReady) onReady();
+    setTimeout(function () { screenLocked = false; }, 400);
+  }, cur ? 450 : 0);
+}
+
+/* ═══════════════ TITLE → LEVEL 1 ═══════════════ */
+const LEVEL_MUSIC_DELAY = 1200;
+function startLevel1() {
+  // the title music keeps playing through the fade and a short beat (so an Enter-first key still gets to hear it), then the level music takes over
+  showScreen('level1', function () { resetLevel(); setTimeout(function () { if (stage === 'level1' && !state.finished) playMusic(levelMusic); }, LEVEL_MUSIC_DELAY); });
+}
+keyHandlers.push(function (key) {
+  if (screenLocked) return;
+  if (stage === 'title' && key === 'Enter') startLevel1();
+  if (stage === 'level1' && key === ' ') player.jumpBuffer = 0.12;
+  if (stage === 'level1' && key === 'Enter' && !state.finished) talkToPup();
+  if (stage === 'transition' && key === 'Enter') endTransition();
+  if (stage === 'complete' && key === 'Enter') showScreen('title', function () { playMusic(titleMusic); });
+});
+
+/* ═════════════════════════════════════════════════
+   LEVEL 1  (all coordinates are 1920x1080 stage pixels, y grows downward)
+════════════════════════════════════════════════= */
+const FLOOR_Y = 830;                                   // Zacky's feet line, on the ground strip of lava_level1.jpg (it starts ~790)
+const PLATFORMS = [                                    // one-way: Zacky lands on the top, can jump up through
+  { x: 520,  y: 660, w: 400 },
+  { x: 1060, y: 660, w: 400 },
+];
+const POOLS = [                                        // lava pools sit on the floor: touching one sends Zacky to the checkpoint
+  { x: 460,  w: 240 },
+  { x: 1000, w: 240 },
+];
+const POOL_SURFACE = FLOOR_Y - 40;                     // feet below this line inside a pool = touching lava
+const CHECKPOINTS = [{ x: 100 }, { x: 850 }, { x: 1420 }];         // the first is the spawn point
+const SPAWN = { x: 100, y: FLOOR_Y };
+const MONSTER = { min: 1520, max: 1600, speed: 80, w: 70, h: 80, sprite: 150 };   // patrols the floor (x = centre)
+const WALK_SPEED = 420, GRAVITY = 2600, JUMP_V = 1100, MAX_FALL = 1500;
+const GEMS = [{ x: 620, y: 600 }, { x: 820, y: 600 }, { x: 1160, y: 600 }, { x: 1360, y: 600 }, { x: 1600, y: 620, reach: 150 }];   // 1-4 sit above the platforms, 5 is over the monster, with a wider pickup so it can be grabbed from just before the monster (centres)
+const PUP = { x: 330, h: 190 };                         // Biscuit the Shiba pup (x = centre)
+const DOOR = { x: 1805, h: 210 };                       // the exit cave (x = centre), opens when all 5 gems are collected
+const PUP_GREET = 150;                                  // Zacky this close to Biscuit for the first time: the hint opens by itself
+const DOOR_REACH = 100;                                 // touching the door: this close sideways (the right edge of the stage is 75 away, so it can't be overshot)
+const GEM_REACH = 115;                                  // a gem is picked up when Zacky's centre is this close sideways (about where the sprites visibly touch)
+const LAVA_EDGE = 25;                                   // how far a foot may overhang the lava edge safely (was 15 before Zacky was scaled up)
+const ZACKY_SCALE = 1.3;                                // Zacky is drawn 1.3x bigger, scaled about his feet
+const HALF_W = 34, BODY_H = 234;                       // Zacky's hitbox (28 and 180 before he was scaled up)
+const STAGE_W = 1920;
+
+const player = { x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, onGround: true, face: 1, jumpBuffer: 0, walkT: 0, invuln: 0 };
+const state = { gems: 0, finished: false, hintT: 0, bubbleT: 0, checkpoint: 0, deaths: 0, monsterX: MONSTER.min, monsterDir: 1 };
+let monsterEl = null, doorEl = null, bubbleEl = null, tipEl = null;
+const gemEls = [];
+const flagEls = [];
+const worldEl = document.getElementById('world');
+const zackyEl = document.getElementById('zacky');
+
+(function buildLevel() {
+  PLATFORMS.forEach(function (p) { addImg('lava_platform.png', p.x, p.y, p.w, 'platform', 3); });
+  POOLS.forEach(function (p) { addImg('lava_pool.png', p.x, FLOOR_Y - 25, p.w, 'pool', 4); });
+  CHECKPOINTS.forEach(function (c, i) {
+    var f = document.createElement('div'); f.className = 'abs flag' + (i === 0 ? ' on' : '');
+    if (i === 0) f.style.display = 'none';   // the start flag sat on Zacky's face: the start is still a checkpoint but draws nothing
+    f.style.left = c.x + 'px'; f.style.top = (FLOOR_Y - 110) + 'px'; worldEl.appendChild(f); flagEls.push(f);
+  });
+  GEMS.forEach(function (g) { var e = addImg('gem.png', g.x - 27, g.y - 32, 54, 'gem', 6); gemEls.push(e); });
+  addImg('friendly_character.png', PUP.x - 66, FLOOR_Y + 6 - PUP.h, null, 'pup', 5).style.height = PUP.h + 'px';
+  doorEl = addImg('exit_door.png', DOOR.x - 114, FLOOR_Y + 4 - DOOR.h, null, 'door locked', 2); doorEl.style.height = DOOR.h + 'px';
+  bubbleEl = addImg('friend_speech.png', PUP.x - 70, FLOOR_Y - PUP.h - 270, 500, 'bubble', 30); bubbleEl.style.display = 'none';
+  tipEl = document.createElement('div'); tipEl.className = 'abs tip'; tipEl.textContent = 'Press Enter';
+  tipEl.style.cssText = 'left:' + PUP.x + 'px;top:' + (FLOOR_Y - PUP.h - 50) + 'px;display:none'; worldEl.appendChild(tipEl);
+  monsterEl = addImg('lava_monster.png', 0, FLOOR_Y + 4 - MONSTER.sprite, null, 'monster', 5);
+  monsterEl.style.height = MONSTER.sprite + 'px';
+})();
+function addImg(src, x, y, w, cls, z) {
+  var i = document.createElement('img');
+  i.src = src; i.alt = ''; i.className = 'abs ' + (cls || '');
+  i.style.cssText = 'left:' + x + 'px;top:' + y + 'px;' + (w ? 'width:' + w + 'px;' : '') + 'z-index:' + (z || 3);
+  worldEl.appendChild(i);
+  return i;
+}
+
+function resetLevel() {
+  player.x = SPAWN.x; player.y = SPAWN.y; player.vx = 0; player.vy = 0; player.onGround = true; player.face = 1;
+  player.jumpBuffer = 0; player.walkT = 0; player.invuln = 0;
+  state.gems = 0; state.finished = false; state.hintT = 0; state.bubbleT = 0; state.pupGreeted = false; state.bubbleStay = false;
+  gemEls.forEach(function (e) { e.classList.remove('got'); });
+  setDoor(); showCount(); bubbleEl.style.display = 'none'; tipEl.style.display = 'none';
+  zackyEl.style.opacity = ''; zackyEl.src = 'Zacky_stand.png';
+  state.checkpoint = 0; state.deaths = 0; state.monsterX = MONSTER.min; state.monsterDir = 1;
+  flagEls.forEach(function (f, i) { f.classList.toggle('on', i === 0); });
+  zackyEl.classList.remove('blink');
+  render();
+}
+
+function showCount() { document.getElementById('gemCount').textContent = state.gems + ' / ' + GEMS.length; }
+function setDoor() { var open = state.gems >= GEMS.length; doorEl.classList.toggle('open', open); doorEl.classList.toggle('locked', !open); }
+function talkToPup() {
+  if (Math.abs(player.x - PUP.x) > 170) return;
+  state.bubbleStay = false;
+  state.bubbleT = 6; bubbleEl.style.display = 'block'; tipEl.style.display = 'none';
+}
+function updateItems(dt) {
+  // gems: touch one to collect it (they stay collected after a restart)
+  GEMS.forEach(function (g, i) {
+    var e = gemEls[i];
+    if (e.classList.contains('got')) return;
+    if (Math.abs(player.x - g.x) < (g.reach || GEM_REACH) && g.y + 45 > player.y - BODY_H && g.y - 45 < player.y) {
+      e.classList.add('got'); state.gems++; sfx(gemSfx, 0.7); showCount(); setDoor();
+    }
+  });
+  // the pup: hint when near, speech bubble after Enter, gone when Zacky walks away
+  var near = Math.abs(player.x - PUP.x) <= 170;
+  // the first time Zacky reaches Biscuit, his hint opens by itself and stays for a few seconds even if Zacky keeps walking (no Enter needed)
+  if (!state.pupGreeted && Math.abs(player.x - PUP.x) <= PUP_GREET) { state.pupGreeted = true; talkToPup(); state.bubbleStay = true; }
+  if (state.bubbleT > 0) {
+    state.bubbleT -= dt;
+    if (state.bubbleT <= 0 || (!near && !state.bubbleStay)) { state.bubbleT = 0; bubbleEl.style.display = 'none'; }
+  }
+  tipEl.style.display = (near && state.bubbleT <= 0) ? 'block' : 'none';
+  // the exit
+  if (Math.abs(player.x - DOOR.x) < DOOR_REACH && player.y > FLOOR_Y - 160) {
+    if (state.gems >= GEMS.length) finishLevel();
+    else { state.hintT = 2.5; }
+  }
+  if (state.hintT > 0) state.hintT -= dt;
+  document.getElementById('hint').classList.toggle('on', state.hintT > 0);
+}
+function finishLevel() {
+  state.finished = true;
+  walkSfx.pause();
+  stopMusic(); sfx(completeSfx, 0.8);                                  // the jingle starts the moment Zacky touches the door (no silence while the screen changes)
+  player.x = DOOR.x; player.vx = 0; player.vy = 0; player.y = FLOOR_Y; player.pose = 'Zacky_climb.png'; zackyEl.src = 'Zacky_climb.png';
+  setTimeout(function () { zackyEl.style.opacity = '0'; }, 250);      // steps into the cave
+  setTimeout(startTransition, 800);
+}
+
+/* ═══════════════ END OF LEVEL: transition clip (optional) → "Level 1 complete" ═══════════════
+   With no clip, or if it fails to load or play, the still image shows for a moment instead and the game carries on.
+   Set window.ZACKY_TRANSITION_VIDEO (or the constant below) to the clip's file name, e.g. 'Lava_Transition.mp4'. */
+const TRANSITION_VIDEO = window.ZACKY_TRANSITION_VIDEO || null;
+const STILL_MS = 2500, VIDEO_START_MS = 5000, VIDEO_MAX_MS = 15000;
+let transitionDone = true, transitionTimers = [];
+function later(fn, ms) { transitionTimers.push(setTimeout(fn, ms)); }
+function startTransition() {
+  stopMusic(); walkSfx.pause();
+  transitionDone = false;
+  showScreen('transition', function () {
+    var vid = document.getElementById('tvid');
+    if (!TRANSITION_VIDEO) { later(endTransition, STILL_MS); return; }
+    function fail() { if (transitionDone) return; vid.style.display = 'none'; transitionTimers.forEach(clearTimeout); later(endTransition, STILL_MS); }
+    vid.onerror = fail;
+    vid.onended = endTransition;
+    vid.onplaying = function () { vid.style.display = 'block'; };
+    later(function () { if (vid.readyState < 3 || vid.paused) fail(); }, VIDEO_START_MS);   // never started: use the still
+    later(endTransition, VIDEO_MAX_MS);                                                        // never ended: move on
+    vid.src = TRANSITION_VIDEO;
+    var pr = vid.play(); if (pr && pr.catch) pr.catch(fail);
+  });
+}
+function endTransition() {
+  if (transitionDone) return;
+  transitionDone = true;
+  transitionTimers.forEach(clearTimeout); transitionTimers = [];
+  var vid = document.getElementById('tvid');
+  try { vid.pause(); } catch (e) {}
+  vid.removeAttribute('src'); vid.style.display = 'none';
+  showScreen('complete');
+}
+function updatePlayer(dt) {
+  var dir = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
+  player.vx = dir * WALK_SPEED;
+  if (dir) player.face = dir;
+  player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
+  if (player.jumpBuffer > 0 && player.onGround) {
+    player.vy = -JUMP_V; player.onGround = false; player.jumpBuffer = 0; sfx(jumpSfx, 0.5);
+  }
+  var prevY = player.y;
+  player.x = Math.min(STAGE_W - HALF_W - 12, Math.max(HALF_W + 12, player.x + player.vx * dt));   // can't leave the stage
+  player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
+  player.y += player.vy * dt;
+  // landing: the floor, or the top of a platform we were above last frame
+  var land = null;
+  if (player.vy >= 0) {
+    if (prevY <= FLOOR_Y && player.y >= FLOOR_Y) land = FLOOR_Y;
+    PLATFORMS.forEach(function (p) {
+      if (player.x + HALF_W > p.x && player.x - HALF_W < p.x + p.w && prevY <= p.y + 0.01 && player.y >= p.y) land = Math.min(land === null ? 1e9 : land, p.y);
+    });
+  }
+  if (player.y > FLOOR_Y) land = FLOOR_Y;                              // never below the floor
+  if (land !== null) { player.y = land; player.vy = 0; player.onGround = true; }
+  else if (player.vy !== 0) player.onGround = false;
+  // animation + footsteps
+  var moving = dir !== 0 && player.onGround;
+  var pose = !player.onGround ? 'Zacky_jump.png' : (moving && Math.floor(player.walkT / 0.15) % 2 === 0 ? 'Zacky_walking.png' : 'Zacky_stand.png');
+  player.walkT += moving ? dt : 0;
+  if (!zackyEl.src.endsWith(pose)) zackyEl.src = pose;
+  player.pose = pose;
+  if (moving && audioUnlocked) { if (walkSfx.paused) { walkSfx.volume = 0.5; walkSfx.play().catch(function () {}); } }
+  else if (!walkSfx.paused) walkSfx.pause();
+}
+
+// ─── hazards ───
+function updateHazards(dt) {
+  // patrolling lava monster
+  state.monsterX += state.monsterDir * MONSTER.speed * dt;
+  if (state.monsterX >= MONSTER.max) { state.monsterX = MONSTER.max; state.monsterDir = -1; }
+  if (state.monsterX <= MONSTER.min) { state.monsterX = MONSTER.min; state.monsterDir = 1; }
+  // checkpoints: walk past a flag to save your place
+  CHECKPOINTS.forEach(function (c, i) {
+    if (i > state.checkpoint && Math.abs(player.x - c.x) < 60) {
+      state.checkpoint = i;
+      flagEls.forEach(function (f, k) { f.classList.toggle('on', k <= i); });
+    }
+  });
+  if (player.invuln > 0) {
+    player.invuln -= dt;
+    if (player.invuln <= 0) zackyEl.classList.remove('blink');
+    return;
+  }
+  var l = player.x - HALF_W, r = player.x + HALF_W, top = player.y - BODY_H;
+  var inLava = POOLS.some(function (p) { return r > p.x + LAVA_EDGE && l < p.x + p.w - LAVA_EDGE && player.y > POOL_SURFACE; });
+  var hitMonster = r > state.monsterX - MONSTER.w / 2 && l < state.monsterX + MONSTER.w / 2 &&
+                   player.y > FLOOR_Y - MONSTER.h && top < FLOOR_Y;
+  if (inLava || hitMonster) sendToCheckpoint(inLava);
+}
+function sendToCheckpoint(lava) {
+  state.deaths++;
+  sfx(hissSfx, 0.6);
+  var c = CHECKPOINTS[state.checkpoint];
+  player.x = c.x; player.y = FLOOR_Y; player.vx = 0; player.vy = 0; player.onGround = true; player.jumpBuffer = 0;
+  player.invuln = 1.2;                                  // a moment of safety so a restart can never trap him
+  zackyEl.classList.add('blink');
+  var fl = document.getElementById('flash'); fl.classList.add('on');
+  setTimeout(function () { fl.classList.remove('on'); }, 80);
+}
+
+function render() {
+  monsterEl.style.transform = 'translateX(' + state.monsterX + 'px) translateX(-50%) scaleX(' + state.monsterDir + ')';
+  // all poses share one foot line and body height. Zacky_jump.png is 832x1248 (stand/walk are 720x1080), so it is
+  // drawn 148x222 with an offset that lines its body up with the stand pose (measured from the alpha channels).
+  var jump = player.pose === 'Zacky_jump.png';
+  if (zackyEl.dataset.j !== String(jump)) { zackyEl.dataset.j = String(jump); zackyEl.style.width = jump ? '148px' : '133px'; zackyEl.style.height = jump ? '222px' : '200px'; }
+  zackyEl.style.transform = 'translate(' + (player.x - 66) + 'px,' + (player.y - 166) + 'px) scale(' + (player.face * ZACKY_SCALE) + ',' + ZACKY_SCALE + ') translate(' + (jump ? -13 : 0) + 'px,' + (jump ? -4 : 0) + 'px)';
+}
+
+var lastT = 0;
+function frame(t) {
+  var dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
+  if (stage === 'level1') { if (!state.finished) { updatePlayer(dt); updateHazards(dt); updateItems(dt); } render(); }
+  else if (!walkSfx.paused) walkSfx.pause();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
