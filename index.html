@@ -5,16 +5,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zacky's Adventures!</title>
+<script>
+/* The art and music live in art/ next to this page, so it loads the same from /, /landing/ and /game3/landing/.
+   Only the three links differ: P1/P2/P3 are the folders of game 1, 2 and 3. */
+var P1 = 'game1/', P2 = 'game2/', P3 = 'game3/';
+(function () {
+  var p = location.pathname;
+  if (/\/landing(\/index\.html)?$|\/landing\/$/.test(p)) {
+    var under = /\/game3\/landing\//.test(p);
+    P3 = '../'; P1 = (under ? '../../' : '../') + 'game1/'; P2 = (under ? '../../' : '../') + 'game2/';
+  }
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:'Arial Rounded MT Bold',Arial,sans-serif;color:#fff;overflow-x:hidden;
- background:#001a33 url('game2/background1_landing.jpg') center/cover no-repeat fixed;
+ background:#001a33 url(art/bg.jpg) center/cover no-repeat fixed;
  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;padding:3vh 3vw;min-height:100vh}
 h1{font-size:clamp(2.2rem,7vw,5.5rem);text-align:center;text-shadow:4px 4px 0 #c0392b,8px 8px 0 rgba(0,0,0,.35);letter-spacing:2px;animation:bob 2.4s ease-in-out infinite}
 .sub{font-size:clamp(1rem,2.5vw,1.6rem);text-shadow:2px 2px 4px #000}
 .cards{display:flex;gap:4vw;flex-wrap:wrap;justify-content:center;width:100%}
-.card{display:flex;flex-direction:column;align-items:center;width:min(40vw,440px);min-width:260px;text-decoration:none;color:#fff;
+.card{display:flex;flex-direction:column;align-items:center;width:min(28vw,440px);min-width:260px;text-decoration:none;color:#fff;
  border:6px solid #fff;border-radius:28px;overflow:hidden;background:#0b5394;box-shadow:0 10px 0 #073763,0 14px 30px rgba(0,0,0,.5);
  transition:transform .15s,box-shadow .15s;outline:none}
 .card .pic{width:100%;aspect-ratio:16/9;background-size:cover;background-position:center;position:relative}
@@ -23,6 +35,7 @@ h1{font-size:clamp(2.2rem,7vw,5.5rem);text-align:center;text-shadow:4px 4px 0 #c
 .card .num{font-size:clamp(1.6rem,4vw,2.6rem);color:#ffd84d;text-shadow:3px 3px 0 #000}
 .card .name{font-size:clamp(1rem,2.4vw,1.5rem)}
 .card.g2{background:#0e8f8f;box-shadow:0 10px 0 #075e5e,0 14px 30px rgba(0,0,0,.5)}
+.card.g3{background:#b93a12;box-shadow:0 10px 0 #7a2205,0 14px 30px rgba(0,0,0,.5)}
 .card:hover,.card.sel{transform:translateY(-8px) scale(1.04);border-color:#ffd84d}
 .card.sel{box-shadow:0 0 0 8px #ffd84d,0 14px 30px rgba(0,0,0,.5)}
 .hint{font-size:clamp(.9rem,2vw,1.2rem);background:rgba(0,0,0,.45);padding:8px 16px;border-radius:20px}
@@ -36,20 +49,29 @@ h1{font-size:clamp(2.2rem,7vw,5.5rem);text-align:center;text-shadow:4px 4px 0 #c
 <h1>Zacky's Adventures!</h1>
 <div class="sub">Pick a game!</div>
 <div class="cards">
- <a class="card g1 sel" href="./game1/" id="c1">
-  <div class="pic" style="background-image:url('game1/space_background.jpg')"><img src="game1/zacky_space.png" alt=""></div>
+ <a class="card g1 sel" data-href="1" id="c1">
+  <div class="pic" style="background-image:url(art/g1_bg.jpg)"><img src="art/g1_zacky.png" alt=""></div>
   <div class="label"><div class="num">Game 1</div><div class="name">Zacky's Paw Patrol Adventure!</div></div>
  </a>
- <a class="card g2" href="./game2/" id="c2">
-  <div class="pic" style="background-image:url('game2/background5_ocean.jpg')"><img src="game2/Zacky_submarine.png" alt=""></div>
+ <a class="card g2" data-href="2" id="c2">
+  <div class="pic" style="background-image:url(art/g2_bg.jpg)"><img src="art/g2_zacky.png" alt=""></div>
   <div class="label"><div class="num">Game 2</div><div class="name">Zacky's Water Adventure!</div></div>
+ </a>
+ <a class="card g3" data-href="3" id="c3">
+  <div class="pic" style="background-image:url(art/g3_bg.jpg)"><img src="art/g3_zacky.png" alt=""></div>
+  <div class="label"><div class="num">Game 3</div><div class="name">Zacky's Lava Quest!</div></div>
  </a>
 </div>
 <div class="hint">Tap a game, or use ← → and Enter</div>
 <button id="mute" aria-label="Mute music">🔇</button>
-<div id="tap">🎵 Tap for music</div>
-<audio id="music" src="game2/End_Music.mp3" loop preload="auto"></audio>
+<div id="tap">🎵 Press any key for music</div>
+<audio id="music" loop preload="auto" src="art/music.mp3"></audio>
 <script>
+// point the three links at the right folders
+(function () {
+  var P = { '1': P1, '2': P2, '3': P3 };
+  document.querySelectorAll('[data-href]').forEach(function (a) { a.setAttribute('href', P[a.dataset.href]); });
+})();
 const m=document.getElementById('music'),btn=document.getElementById('mute'),tap=document.getElementById('tap');
 const cards=[...document.querySelectorAll('.card')];let i=0,muted=false,started=false;
 function ui(){btn.textContent=(muted||!started)?'🔇':'🔊';}
