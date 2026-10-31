@@ -20,3 +20,5 @@ Landing page music: landing/art/music.mp3 is "Storm" by Aylex, from Free To Use 
 Music from Free To Use
 Source: https://freetouse.com/music
 Storm by Aylex
+
+Level 3 v2 additions (from /workspace/zacky3/assets/level3v2/, full list and tools in that folder's CREDITS.md): volcano_chase_bg_v2.jpg, volcano_glow_v2.png, smoke_puff.png, lava_spurt.png, rock_side.png, tree_side.png, post_side.png, bush_side.png, path_dash.png, lava_rock.png, lava_rock_small.png, lava_wave_plain.png, car_front_empty.png, Zacky_in_car_front.png, donut.png (art: built-in GenerateImage tool, cut out with rembg, finished with Pillow; path_dash.png and volcano_glow_v2.png drawn with Pillow/numpy), and the sounds donut_crunch.mp3, boost_whoosh.mp3, volcano_boom.mp3, volcano_rumble_loud.mp3, rock_launch.mp3, rock_roll.mp3, car_horn.mp3, car_whoosh.mp3 (synthesised with numpy/scipy and encoded with ffmpeg, so project-owned; no third-party audio or art). The title car zacky_car.png is reused unchanged. Nothing was copied from Paw Patrol or other games.
