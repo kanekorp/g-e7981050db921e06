@@ -67,9 +67,51 @@
   @keyframes celTwinkle { 0%,100% { opacity: 0; transform: scale(.3) rotate(0deg); } 50% { opacity: .95; transform: scale(1) rotate(45deg); } }
   @media (prefers-reduced-motion: reduce) { #celebrate .cel-bg { animation: none; } #celebrate .spark { animation: none; opacity: .7; transform: none; } }
   #celebrate .press { bottom: 60px; animation: blink 1.4s ease-in-out infinite; }
-  #hud, #hud2 { position: absolute; left: 40px; top: 30px; z-index: 30; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.55); border: 4px solid #ffd84d; border-radius: 40px; padding: 10px 26px; color: #fff; font-size: 48px; text-shadow: 2px 2px 0 #000; }
+  /* ─── LEVEL 3 (lava chase) ─── */
+  #level3 { background: #1a0500; overflow: hidden; }
+  #l3cam, #l3bg { position: absolute; inset: 0; }
+  #l3bg { background: url('volcano_chase_bg.jpg') center/cover no-repeat; transform: scale(1.03); will-change: transform; }
+  #l3lines { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.3; pointer-events: none; z-index: 30; }
+  #world3 { position: absolute; inset: 0; z-index: 10; }
+  #world3 .it { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; will-change: transform; }
+  #world3 .it.near { z-index: 25; }
+  #world3 .it.t-L img { filter: drop-shadow(4px 0 0 #1c0c04) drop-shadow(-4px 0 0 #1c0c04) drop-shadow(0 4px 0 #1c0c04) drop-shadow(0 -4px 0 #1c0c04); }   /* a dark outline so logs stand out from the sand, also far away */
+  #world3 .it img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 50% 100%; }
+  #glow3 { position: absolute; left: 764px; top: 150px; width: 420px; height: 262px; mix-blend-mode: screen; opacity: 0.6; pointer-events: none; }
+  #hill3 { position: absolute; left: 0; top: 0; width: 520px; height: 142px; transform-origin: 0 0; z-index: 15; display: none; pointer-events: none; }
+  #celebrate3 { background: #1a0500; overflow: hidden; text-align: center; }
+  #celebrate3 .c3-bg { position: absolute; inset: 0; background: url('volcano_chase_bg.jpg') center/cover no-repeat; filter: brightness(0.8); }
+  #celebrate3 .c3-confetti { position: absolute; left: 0; top: -1080px; width: 1920px; height: 2160px; background: url('confetti.png') 0 0/1920px 1080px repeat-y; animation: c3fall 7s linear infinite; pointer-events: none; }
+  @keyframes c3fall { from { transform: translateY(0); } to { transform: translateY(1080px); } }
+  @media (prefers-reduced-motion: reduce) { #celebrate3 .c3-confetti { animation: none; top: 0; } }
+  #celebrate3 h1 { position: absolute; left: 0; right: 0; top: 190px; font-size: 140px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; }
+  #count3 { position: absolute; left: 0; right: 0; top: 390px; font-size: 76px; color: #fff; text-shadow: 4px 4px 0 #5a1500; }
+  #gemRow3 { position: absolute; left: 0; right: 0; top: 520px; display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; padding: 0 160px; }
+  #gemRow3 img { width: 84px; height: 99px; filter: drop-shadow(0 0 18px #ff6a00) drop-shadow(3px 3px 0 #000); opacity: 0; transform: scale(0.2); }
+  #gemRow3 img.miss { filter: grayscale(1) brightness(0.45) drop-shadow(3px 3px 0 #000); }
+  #celebrate3.active #gemRow3 img { animation: gempop 0.45s ease-out forwards; }
+  #celebrate3 .press { bottom: 120px; animation: blink 1.4s ease-in-out infinite; }
+  #wave3 { position: absolute; left: 0; top: 1080px; width: 1920px; height: 500px; z-index: 28; pointer-events: none; will-change: transform; }
+  #flash3 { position: absolute; inset: 0; background: #ffa24d; opacity: 0; z-index: 60; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #flash3 { display: none; } }          /* no flash at all for calm mode */
+  #whoops3 { position: absolute; left: 0; right: 0; top: 250px; text-align: center; font-size: 210px; color: #ffd84d; text-shadow: 8px 8px 0 #7a2200, 0 0 40px #fff; z-index: 61; opacity: 0; transform: scale(0.4); pointer-events: none; }
+  #whoops3.on { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.35s cubic-bezier(.3,1.6,.5,1); }
+  #z3 { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 20; will-change: transform; }
+  #z3 img { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); max-width: none; }
+  #z3 .shadow { position: absolute; left: -60px; top: -14px; width: 120px; height: 28px; border-radius: 50%; background: rgba(60,20,40,0.35); }
+  #level3 .press { bottom: 120px; animation: blink 1.4s ease-in-out infinite; z-index: 50; }
+  #ready3 .press { bottom: 340px; }    /* sits on the road above Zacky's head, not over it */
+  #ready3 h1 { position: absolute; left: 0; right: 0; top: 90px; text-align: center; font-size: 120px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; z-index: 50; }
+  #hud, #hud2, #hud3 { position: absolute; left: 40px; top: 30px; z-index: 30; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.55); border: 4px solid #ffd84d; border-radius: 40px; padding: 10px 26px; color: #fff; font-size: 48px; text-shadow: 2px 2px 0 #000; }
   #hint, #hint2 { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 30; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 12px 40px; font-size: 48px; text-shadow: 2px 2px 0 #000; white-space: nowrap; }
   #hint.on, #hint2.on { opacity: 1; }
+  #hint3 { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 40; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 12px 40px; font-size: 64px; text-shadow: 2px 2px 0 #000; white-space: nowrap; pointer-events: none; }
+  #hint3.on { opacity: 1; }
+  .keycap { display: inline-block; min-width: 84px; padding: 0 18px; margin: 0 6px; height: 84px; line-height: 78px; text-align: center; vertical-align: middle; font-weight: normal; color: #3a1a00; text-shadow: none; background: linear-gradient(#fff6d8, #ffd84d); border: 4px solid #5a1500; border-radius: 16px; box-shadow: 0 8px 0 #7a2200; }
+  .keycap.wide { min-width: 260px; }
+  #hint3.on .keycap { animation: keypress 0.9s ease-in-out infinite; }
+  @keyframes keypress { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); box-shadow: 0 2px 0 #7a2200; } }
+  @media (prefers-reduced-motion: reduce) { #hint3.on .keycap { animation: none; } }
   .keycap { display: inline-block; min-width: 120px; text-align: center; padding: 0 22px; margin: 0 6px; border-radius: 14px; background: #f4f4f4; color: #222; border: 4px solid #999; border-bottom-width: 12px; text-shadow: none; font-size: 40px; line-height: 64px; vertical-align: middle; }
   .splashpuff { z-index: 8; transform-origin: 50% 80%; animation: puff 0.7s ease-out forwards; pointer-events: none; }
   @keyframes puff { 0% { opacity: 0; scale: 0.4; } 25% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1.25; } }
@@ -133,7 +175,30 @@
     <div id="hud2"></div>
     <div id="hint2"></div>
   </div>
-  <div id="celebrate" class="screen"><div class="cel-bg"></div><div id="sparks"></div><div class="press">Press Enter</div></div>
+  <div id="celebrate" class="screen"><div class="cel-bg"></div><div id="sparks"></div><div class="press">Press Enter for level 3</div></div>
+
+  <!-- ════════════════════ LEVEL 3 END ════════════════════ -->
+  <div id="celebrate3" class="screen">
+    <div class="c3-bg"></div><div class="c3-confetti"></div>
+    <h1>Level 3 complete!</h1>
+    <div id="count3"></div>
+    <div id="gemRow3" aria-label="gems found"></div>
+    <div class="press">Press Enter to play again</div>
+  </div>
+
+  <!-- ════════════════════ LEVEL 3 (lava chase) ════════════════════ -->
+  <div id="level3" class="screen">
+    <div id="l3cam"><div id="l3bg"><img id="glow3" src="volcano_glow.png" alt=""></div></div>
+    <img id="l3lines" src="speed_lines.png" alt="">
+    <div id="world3"></div>
+    <div id="z3"><i class="shadow"></i><img id="z3img" src="Zacky_run_front_1.png" alt=""></div>
+    <img id="hill3" src="safe_hill.png" alt="">
+    <img id="wave3" src="lava_wave.png" alt="">
+    <div id="hud3"></div>
+    <div id="hint3"></div>
+    <div id="flash3"></div><div id="whoops3">Whoops!</div>
+    <div id="ready3"><h1>Lava chase!</h1><div class="press">Press Enter to run!</div></div>
+  </div>
 </div>
 
 <audio id="titleMusic" src="Lava_Title_Music.mp3" loop preload="auto"></audio>
@@ -141,8 +206,13 @@
 <audio id="walkSfx" src="walking.mp3" loop preload="auto"></audio>
 <audio id="jumpSfx" src="jump.mp3" preload="auto"></audio>
 <audio id="hissSfx" src="lava_hiss.mp3" preload="auto"></audio>
-<audio id="boingSfx" src="boing.mp3" preload="auto"></audio>   <!-- placeholder synth boing for the lava bounce; replace the file to change it -->
+<audio id="boingSfx" src="boing.mp3" preload="auto"></audio>   <!-- the lava bounce: a real CC0 boing (see CREDITS.md) -->
 <audio id="level2Music" src="Lava_Level2_Music.mp3" loop preload="auto"></audio>
+<audio id="chaseMusic" src="Chase_Music.mp3" loop preload="auto"></audio>
+<audio id="rumbleSfx" src="volcano_rumble.mp3" loop preload="auto"></audio>
+<audio id="stumbleSfx" src="stumble_boing.mp3" preload="auto"></audio>
+<audio id="whoopsSfx" src="whoops_bounce.mp3" preload="auto"></audio>
+<audio id="cheerSfx" src="finish_cheer.mp3" preload="auto"></audio>
 <audio id="pickupSfx" src="pickup.mp3" preload="auto"></audio>
 <audio id="sprayAudio" src="water_spray.mp3" preload="auto"></audio>
 <audio id="coolAudio" src="monster_cool.mp3" preload="auto"></audio>
@@ -165,6 +235,20 @@ const L2_DEFAULTS = {
   hintOn: true               // the "Press Enter to splash!" hint
 };
 const L2_CFG = Object.assign({}, L2_DEFAULTS, window.ZACKY_L2_CONFIG || {});
+/* ═══════════════ LEVEL 3 SETTINGS (the one config block for level 3: change a value here, or set window.ZACKY_L3_CONFIG = { ... } before the page script. The logic lives in level3.js) ═══════════════ */
+const L3_DEFAULTS = {
+  runSpeed: 1,                 // 1 = a run with no trips takes levelLengthSeconds; 2 = twice as fast (items arrive twice as fast too)
+  levelLengthSeconds: 40,      // seconds of running before the safe hill (30 to 45 is the plan)
+  laneCount: 3,                // lanes across the path (2 to 5; the hand-written item list uses left, middle, right)
+  spawnGapMs: 500,             // one slot of the hand-written item list, in ms of running (bigger = items further apart)
+  jumpMs: 700,                 // how long a jump lasts
+  lavaCatchUp: 0.4,            // how much closer the lava wave gets after a trip (it has caught up at 1.0, so three trips in a row)
+  lavaRecover: 0.04,           // how much of the wave goes back down every second
+  checkpointEverySeconds: 5,   // a catch bounces Zacky back to the last multiple of this many seconds (at least 2 and at most maxRewindSeconds back)
+  maxRewindSeconds: 5,         // a catch never rewinds the run by more than this
+  hintsOn: true                // the "Press Space to jump!" and arrows hints (each shows once)
+};
+const L3_CFG = Object.assign({}, L3_DEFAULTS, window.ZACKY_L3_CONFIG || {});
 /* ═══════════════ STAGE SCALING (same as games 1 and 2) ═══════════════ */
 window.STAGE_SCALE = 1;
 (function () {
@@ -230,7 +314,7 @@ const TITLE_CAR = window.ZACKY_TITLE_CAR !== undefined ? window.ZACKY_TITLE_CAR 
   document.getElementById('title').style.backgroundImage = "url('" + TITLE_BG + "')";
   var car = document.getElementById('titleCar'); car.src = TITLE_CAR; car.style.display = 'block';
 })();
-const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
+const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png', 'volcano_chase_bg.jpg', 'speed_lines.png', 'Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zacky_run_front_3.png', 'Zacky_run_front_4.png', 'Zacky_jump_front.png', 'Zacky_stumble_front.png', 'lava_wave.png', 'log.png', 'gap.png', 'safe_hill.png', 'volcano_glow.png', 'confetti.png', 'sparkle.png'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
 function preload(urls) {
   var jobs = urls.map(function (u) {
     return new Promise(function (resolve) {
@@ -269,6 +353,12 @@ function celebrateMusic() {
   if (currentMusic !== titleMusic) playMusic(titleMusic);
 }
 completeSfx.addEventListener('ended', celebrateMusic);
+let boingLastMs = -1e9;
+function playBoing() {                          // the lava boing (levels 1 and 2): quiet, and at most once per 1.5s so holding into a pool is not a boing machine
+  var now = performance.now();
+  if (now - boingLastMs < 1500) return;
+  boingLastMs = now; sfx(boingSfx, 0.5);
+}
 function sfx(a, vol) { if (!audioUnlocked) return; a.currentTime = 0; a.volume = vol || 0.6; a.play().catch(function () {}); }
 let currentMusic = null;
 function playMusic(track) {
@@ -293,7 +383,7 @@ audioUnlockHandlers.push(function () { if (currentMusic) { var t = currentMusic;
     var sz = 30 + (i % 3) * 14; e.style.width = e.style.height = sz + 'px'; host.appendChild(e);
   });
 })();
-const screens = { title: document.getElementById('title'), level1: document.getElementById('level1'), level2: document.getElementById('level2'), celebrate: document.getElementById('celebrate'),
+const screens = { title: document.getElementById('title'), level1: document.getElementById('level1'), level2: document.getElementById('level2'), celebrate: document.getElementById('celebrate'), level3: document.getElementById('level3'), celebrate3: document.getElementById('celebrate3'),
   transition: document.getElementById('transition'), complete: document.getElementById('complete') };
 let stage = 'loading', screenLocked = false;
 function showScreen(name, onReady) {
@@ -326,7 +416,9 @@ keyHandlers.push(function (key, isRepeat) {
   if (stage === 'transition' && key === 'Enter') endTransition();
   if (stage === 'complete' && key === 'Enter') startLevel2();                       // level 1 -> level 2
   if (stage === 'level2') level2Key(key, isRepeat);
-  if (stage === 'celebrate' && key === 'Enter') showScreen('title', function () { playMusic(titleMusic); });
+  if (stage === 'celebrate' && key === 'Enter') startLevel3();                        // level 2's end -> level 3
+  if (stage === 'level3') level3Key(key, isRepeat);
+  if (stage === 'celebrate3') level3Done3Key(key);                                    // level 3's end -> back to the title
 });
 
 /* ═════════════════════════════════════════════════
@@ -570,7 +662,7 @@ function updateHazards(dt) {
 function startLavaBounce(pool) {
   closeBubble(); bounceHint.bump(); state.bounce = ZackyShared.startBounce(player, pool, BOUNCE);
   state.bounces = (state.bounces || 0) + 1;
-  sfx(boingSfx, 0.7);
+  playBoing();
 }
 function sendToCheckpoint() {                            // the lava monster: back to the last flag
   state.deaths++;
@@ -731,7 +823,7 @@ function updateHazards2(dt) {
   });
   if (state2.bounce) return;
   var pool = ZackyShared.findLavaPool(player, L2_POOLS.filter(function (p) { return !p.bridge; }), { halfW: HALF_W, edge: LAVA_EDGE, surfaceY: POOL_SURFACE });
-  if (pool) { closeBubble2(); bounceHint.bump(); state2.bounce = ZackyShared.startBounce(player, pool, BOUNCE); state2.bounces++; sfx(boingSfx, 0.7); return; }
+  if (pool) { closeBubble2(); bounceHint.bump(); state2.bounce = ZackyShared.startBounce(player, pool, BOUNCE); state2.bounces++; playBoing(); return; }
   if (player.invuln > 0) { player.invuln -= dt; if (player.invuln <= 0) zackyEl.classList.remove('blink'); return; }
   var hit = monsters2.some(function (m) {
     return m.active && !m.cooled && player.x + HALF_W > m.x - L2_MON.w / 2 && player.x - HALF_W < m.x + L2_MON.w / 2 && player.y > FLOOR_Y - L2_MON.h && player.y - BODY_H < FLOOR_Y;
@@ -824,10 +916,12 @@ function frame(t) {
   var dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
   if (stage === 'level1') { if (!state.finished) { if (state.bounce) updateBounce(dt); else updatePlayer(dt); updateHazards(dt); updateItems(dt); } render(); }
   else if (stage === 'level2') { if (!state2.finished) { if (state2.bounce) updateBounce(dt, state2); else updatePlayer(dt); updateHazards2(dt); updateItems2(dt); updateBlobs2(dt); }  updateMonsters2(state2.finished ? 0 : dt); renderLevel2(); }
+  else if (stage === 'level3') level3Frame(dt);
   else if (!walkSfx.paused) walkSfx.pause();
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 </script>
+<script src="level3.js"></script>
 </body>
 </html>
