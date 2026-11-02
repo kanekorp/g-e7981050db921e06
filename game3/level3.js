@@ -9,25 +9,25 @@ const L3_FRAMES = { run: ['Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zac
 const L3_SIZE = { run: [140, 350], jump: [218, 321], stumble: [238, 343] };
 const L3_RUN_FRAME_MS = 110;
 const L3_SLIDE_MS = 150;                 // a lane change takes this long
-const L3_TRAVEL = 2.0;                   // seconds of running an item is visible for, from the vanishing point to Zacky
+const L3_TRAVEL = L3_CFG.itemVisibleS;   // seconds of running an item is visible for, from the vanishing point to Zacky (set in the L3_CFG block in index.html)
 const L3_PERSP = 1.8;                    // how fast things grow as they come closer
 const L3_ITEM = { g: { src: 'gem.png', w: 68, h: 80, sc: 1.7, lift: 34 }, R: { src: 'lava_rock.png', w: 300, h: 266, sc: 0.8, lift: 133, spin: true } };   // R sits on its centre (lift = half its height) so it can spin
 /* The fixed, hand-written item list: [slot, lane, type]; slot * spawnGapMs is the moment the item reaches Zacky. g = gem, R = lava rock (dodge it with the arrows, or jump right over it).
    Lanes 0, 1, 2 = left, middle, right. Every run has exactly this layout; there is nothing random in level 3. Every rock row leaves at least one free lane, and rock rows are at least 1.5s apart. */
 const L3_LIST = [
-  [3, 1, 'g'], [5, 1, 'g'], [7, 1, 'g'],              // three gems straight ahead: the first one reaches him at 1.5s, a free start
-  [12, 1, 'R'],                                        // the first rock, in the middle lane at 6s (the dodge hint shows just before it)
-  [16, 0, 'g'], [18, 0, 'g'],
-  [21, 2, 'R'],                                        // a rock off to the side
-  [24, 0, 'R'], [24, 1, 'R'],                          // two rocks side by side: the right lane is free
-  [28, 2, 'g'], [30, 2, 'g'], [32, 2, 'g'],
-  [36, 1, 'R'],
-  [39, 0, 'R'], [39, 2, 'R'],                          // the middle lane is free
-  [42, 1, 'g'], [44, 1, 'g'],
-  [47, 2, 'R'],
-  [50, 1, 'R'], [50, 2, 'R'],                          // the left lane is free
-  [53, 0, 'g'], [55, 0, 'g'],
-  [58, 1, 'R'], [61, 0, 'R'], [61, 1, 'R']             // the last rocks (29s and 30.5s, the right lane free at the end), then the donut
+  [4, 1, 'g'], [6, 1, 'g'], [8, 1, 'g'],              // three gems straight ahead: the first one reaches him at 2.0s, a free start (every slot moved one on when items became visible for 2.5s, so nothing starts mid-path)
+  [13, 1, 'R'],                                        // the first rock, in the middle lane at 6.5s (the dodge hint shows just before it)
+  [17, 0, 'g'], [19, 0, 'g'],
+  [22, 2, 'R'],                                        // a rock off to the side
+  [25, 0, 'R'], [25, 1, 'R'],                          // two rocks side by side: the right lane is free
+  [29, 2, 'g'], [31, 2, 'g'], [33, 2, 'g'],
+  [37, 1, 'R'],
+  [40, 0, 'R'], [40, 2, 'R'],                          // the middle lane is free
+  [43, 1, 'g'], [45, 1, 'g'],
+  [48, 2, 'R'],
+  [51, 1, 'R'], [51, 2, 'R'],                          // the left lane is free
+  [54, 0, 'g'], [56, 0, 'g'],
+  [59, 1, 'R'], [62, 0, 'R'], [62, 1, 'R']             // the last rocks (30.0s and 31.5s, the right lane free at the end), then the donut
 ];
 const L3_JUMP_CLEAR = 0.3;               // a rock is cleared while the jump is above this fraction of its peak (about 80% of the jump)
 const L3_JUMP_PEAK = 190;                // px a jump rises
@@ -43,10 +43,12 @@ const L3_FLASH_MAX = 0.35;               // the soft orange flash on a catch nev
 const L3_INVULN_S = 3.0;                 // after a bounce nothing trips him for this long (gems still count)
 const L3_TRIP_GUARD_S = 0.5;             // after a trip a second trip is blocked for this long, so mashing into two logs cannot double-trip
 /* Receding scenery: roadside props and path dashes enter big at the screen edge beside Zacky and shrink towards the volcano, the same perspective maths run in reverse (u goes from L3_SCEN_U0 down to 0). */
-const L3_PROPS = [{ src: 'tree_side.png', w: 153, h: 600, sc: 1.0 }, { src: 'rock_side.png', w: 417, h: 420, sc: 0.75 }, { src: 'post_side.png', w: 146, h: 560, sc: 0.9 }, { src: 'bush_side.png', w: 442, h: 380, sc: 0.8 }];
-const L3_PROP_ORDER = [0, 1, 2, 3, 0, 2, 1, 3];   // the fixed order the props come in (left and right alternate), the same every run
+const L3_PROPS = [{ src: 'tree_side.png', w: 153, h: 600, sc: 1.0 }, { src: 'rock_side.png', w: 417, h: 420, sc: 0.75 }, { src: 'post_side.png', w: 146, h: 560, sc: 0.9 }, { src: 'bush_side.png', w: 442, h: 380, sc: 0.8 },
+  { src: 'boulder_big.png', w: 578, h: 600, sc: 0.55 }, { src: 'rock_cluster.png', w: 429, h: 420, sc: 0.72 }, { src: 'charred_tree_2.png', w: 321, h: 650, sc: 0.9 }, { src: 'stump.png', w: 552, h: 400, sc: 0.5 },
+  { src: 'lava_vent.png', w: 315, h: 420, sc: 0.8 }, { src: 'crystal_rocks.png', w: 367, h: 500, sc: 0.7 }, { src: 'fence_post_2.png', w: 216, h: 560, sc: 0.9 }];
+const L3_GROUND = [{ src: 'ground_crack_1.png', w: 300, h: 80, sc: 1, haze: true }, { src: 'ground_crack_2.png', w: 300, h: 80, sc: 1, haze: true }, { src: 'pebbles.png', w: 300, h: 80, sc: 1, haze: true }];   // flat decals on the off-road ground
+const L3_RIDGE = { w: 2400, h: 300, sc: 0.3, inner: 800 };   // ridge strips: drawn at 0.3x, and clipped (with a soft edge) so the left one stops at x 800 and the right one starts at 1120, well clear of the volcano and its smoke
 const L3_SCEN_U0 = 1.12;                          // where a prop starts: a little below the bottom edge (u 1 = the bottom edge)
-const L3_PROP_G = 1300;                           // ground distance of a prop from the middle of the road at the bottom edge (the sand ends at about 1290, the outer lane is at 520), plus a little spread
 const L3_DASH = { src: 'path_dash.png', w: 200, h: 60, sc: 0.9 };
 const chaseMusic = document.getElementById('chaseMusic');
 const z3 = document.getElementById('z3'), z3img = document.getElementById('z3img'), l3bg = document.getElementById('l3bg'), l3lines = document.getElementById('l3lines');
@@ -72,42 +74,127 @@ function item3Pos(it, T) {                                                      
   var d = 1 - (item3At(it) - T) / L3_TRAVEL, sc = L3_SZ * Math.pow(Math.max(d, 0), L3_PERSP);
   return { d: d, s: sc, x: lane3XAt(it.lane, sc), y: L3_VP.y + (1080 - L3_VP.y) * sc };
 }
-function scen3Life() { return L3_SCEN_U0 * L3_TRAVEL / L3_CFG.scenerySpeed; }    // seconds a prop takes from the bottom edge to the volcano
+function scen3Life() { return L3_SCEN_U0 * L3_TRAVEL / L3_CFG.sceneryFactor; }    // seconds a prop takes from the bottom edge to the volcano
 function scen3Pos(u, ground) { var s = Math.pow(Math.max(u, 0), L3_PERSP); return { s: s, x: L3_VP.x + ground * s, y: L3_VP.y + (1080 - L3_VP.y) * s }; }
 function scen3Mod(k, n) { return ((k % n) + n) % n; }
-function scen3Make(t, cls) {
+function scen3Make(t, cls, parent) {
   var el = document.createElement('div'), im = document.createElement('img');
   el.className = 'sp ' + cls; im.alt = ''; el.appendChild(im); scenEl3.appendChild(el);
-  return { el: el, img: im, k: null, shown: false, t: t };
+  return { el: el, img: im, k: null, shown: false, t: t, stamp: -1 };
+}
+/* Roadside props come in clusters: a cluster is clusterMin..clusterMax mixed props close together, then a small gap, then the next cluster.
+   Everything is a pure function of the cluster number (a hash), so there is no Math.random per frame and a prop never changes while it is on screen.
+   Each side has one stream per depth row; a stream owns a fixed pool of elements that are reused as clusters recede and are replaced. */
+const L3_ROWS = [{ g: 1150, spread: 150, sc: 1.0 }, { g: 1550, spread: 250, sc: 0.95 }, { g: 2150, spread: 350, sc: 0.9 }];
+/* The road's sand edge in ground px from the middle of the road (measured from screenshots: left 1054, right 1016). Nothing on the off-road ground is placed closer than L3_CFG.edgeClearPx to it. */
+const L3_EDGE = { '-1': 1355, '1': 1366 };       // where the sand really ends, ground px from the road centre, measured on volcano_chase_bg_v2.jpg (dev/realedge.py: plain starts at 1353 left and 1366 right; the dark fringe starts about 1330)
+function scen3Clear(side, half) { return L3_EDGE[side] + L3_CFG.edgeClearPx + half; }       // the nearest a picture of half-width `half` (ground px) may sit, centre to the middle of the road
+/* Fill rows (L3_CFG.groundFill > 0): they use pictures that already exist and fill the bare purple plain. 'gap' is a row of props at about 1800 ground px between the middle and far rows,
+   'horizon' a dense strip of small hazy props low under the horizon (far to the side, they only come on screen near the vanishing point), 'ground' / 'ground2' are the ground texture:
+   the existing cracks and pebbles decals, scattered thickly over the whole plain at two depths. uTop = the highest u a row is drawn at (the far rows start well down the road, where they enter from the side of the screen). */
+const L3_FILL = [
+  { name: 'horizon', kind: 'prop', g: 4200, spread: 5000, sc: 0.6, rank: 'back', hid: 6, cl: [3, 5], inner: 0.1, gapS: 0.12, uTop: 0.6 },
+  { name: 'gap', kind: 'prop', g: 1800, spread: 450, sc: 0.85, rank: 1.5, hid: 5, cl: [1, 3], inner: 0.3, gapS: 0.5, uTop: 1.12 },
+  { name: 'ground', kind: 'decal', g: 0, spread: 1400, pow: 1.6, sc: 1, rank: 'floor', hid: 7, cl: [1, 1], inner: 0, gapS: 0.07, uTop: 1.12, size: 0.8, sizeV: 0.8, mix: [2, 2, 2, 2, 2, 2, 0, 2, 2, 1] },
+  { name: 'ground2', kind: 'decal', g: 0, spread: 7000, pow: 1.5, sc: 1, rank: 'floor', hid: 8, cl: [1, 1], inner: 0, gapS: 0.045, uTop: 0.6, gMin: 2900, size: 1.4, sizeV: 1.0, mix: [2, 2, 2, 2, 0, 2, 2, 1] }
+];   // near (hugs the path edge), middle, far: ground distance from the middle of the road at the bottom edge
+function scen3H(a, b, c) { var x = Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 1274126177) | 0; x = Math.imul(x ^ (x >>> 13), 1274126177); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+function scen3Rows() { return Math.max(1, Math.min(L3_ROWS.length, Math.round(L3_CFG.depthRows))); }
+function scen3Inner() { return L3_CFG.propGapS * 0.7; }                                       // gap between props inside a cluster
+function scen3Pitch() { return L3_CFG.clusterMax * scen3Inner() + L3_CFG.propGapS * 0.6; }    // time from one cluster start to the next
+function scen3Spec(st) {                    // everything about a stream's timing: cluster size, spacing, how much of the road it is drawn on, and how many pictures it needs
+  var row = st.def, life = scen3Life(), cl = row.cl || [L3_CFG.clusterMin, L3_CFG.clusterMax];
+  st.cmin = cl[0]; st.cmax = cl[1]; st.inner = row.cl ? row.inner : scen3Inner();
+  st.pitch = row.cl ? st.cmax * st.inner + row.gapS : scen3Pitch();
+  st.uTop = row.uTop || L3_SCEN_U0; st.ageMin = (L3_SCEN_U0 - st.uTop) * L3_TRAVEL / L3_CFG.sceneryFactor;
+  st.phase = scen3H(st.hid, st.side, 7) * st.pitch; st.els = [];
+  st.n = (Math.ceil((life - st.ageMin + st.inner * st.cmax) / st.pitch) + 3) * st.cmax;
+  return st;
 }
 function buildScenery3() {
-  scenEl3.innerHTML = ''; scen3.props = []; scen3.dashes = [];
-  var gap = L3_CFG.sceneryGapMs / 1000, life = scen3Life(), n = Math.ceil(life / gap) + 2, i, c;
-  for (i = 0; i < n; i++) scen3.props.push(scen3Make(null, 'prop'));
+  scenEl3.innerHTML = ''; scen3.props = []; scen3.dashes = []; scen3.streams = [];
+  var gap = L3_CFG.sceneryGapMs / 1000, life = scen3Life(), i, c, r, sd;
+  scen3.fill = [];
+  for (r = scen3Rows() - 1; r >= 0; r--) for (sd = -1; sd <= 1; sd += 2) {   // far row first, so a nearer row is later in the document too
+    var st = { row: r, hid: r, def: L3_ROWS[r], side: sd }; scen3Spec(st);
+    for (i = 0; i < st.n; i++) st.els.push(scen3Make(null, 'prop'));
+    scen3.streams.push(st);
+  }
+  if (L3_CFG.groundFill > 0) L3_FILL.forEach(function (fr) { for (sd = -1; sd <= 1; sd += 2) {
+    var st = { row: fr.hid, hid: fr.hid, def: fr, side: sd }; scen3Spec(st);
+    for (i = 0; i < st.n; i++) st.els.push(scen3Make(null, fr.kind === 'decal' ? 'crack' : 'prop'));
+    scen3.fill.push(st);
+  } });
+  var rg = document.getElementById('ridge3'); rg.innerHTML = ''; scen3.ridge = [];
+  [['ridge_left.png', 0, L3_RIDGE.inner], ['ridge_right.png', 1920 - L3_RIDGE.inner, L3_RIDGE.inner]].forEach(function (d) {
+    var box = document.createElement('div'), strip = document.createElement('div'); box.className = 'rg'; box.style.left = d[1] + 'px'; box.style.width = d[2] + 'px'; box.style.top = (L3_BG_VP.y + 8 - L3_RIDGE.h * L3_RIDGE.sc) + 'px'; box.style.height = L3_RIDGE.h * L3_RIDGE.sc + 'px'; box.style.webkitMaskImage = box.style.maskImage = 'linear-gradient(' + (d[1] ? '90deg' : '270deg') + ', transparent 0, #000 140px, #000 100%)';
+    strip.style.width = L3_RIDGE.w * L3_RIDGE.sc * 3 + 'px'; strip.style.height = L3_RIDGE.h * L3_RIDGE.sc + 'px'; strip.style.backgroundSize = L3_RIDGE.w * L3_RIDGE.sc + 'px ' + L3_RIDGE.h * L3_RIDGE.sc + 'px';
+    strip.style.backgroundImage = "url('" + d[0] + "')"; box.appendChild(strip); rg.appendChild(box); scen3.ridge.push(strip);
+  });
+  scen3.cracks = [];
+  for (sd = -1; sd <= 1; sd += 2) { var cl = []; for (i = 0; i < Math.ceil(life / L3_CFG.crackGapS) + 3; i++) cl.push(scen3Make(null, 'crack')); scen3.cracks.push({ side: sd, phase: scen3H(sd, 3, 29) * L3_CFG.crackGapS, els: cl }); }
   var nd = Math.ceil(life / (gap / 2)) + 2;
   for (c = 1; c < L3_CFG.laneCount; c++) { var col = []; for (i = 0; i < nd; i++) col.push(scen3Make(null, 'dash')); scen3.dashes.push(col); }
   state3.scen = life;                                            // the road is already lined with props on the still screen
 }
-function scen3Place(o, k, spawnS, ground, def, mirror, lift) {   // put one pooled element where the receding prop with spawn time spawnS is
-  var u = L3_SCEN_U0 - (state3.scen - spawnS) * L3_CFG.scenerySpeed / L3_TRAVEL, vis = u > 0.02 && u <= L3_SCEN_U0 + 0.001;
-  if (o.k !== k) { o.k = k; o.img.src = def.src; o.img.width = def.w; o.img.height = def.h; o.img.style.left = (-def.w / 2) + 'px'; o.img.style.top = (lift ? -def.h : -def.h / 2) + 'px'; }
+/* Distance fade: from fadeStart down to the horizon a prop thins out and tints towards the haze of the sky, so nothing pops at the volcano end. The tint is a few steps (band), set only when the step changes, so it costs nothing per frame. */
+function scen3Haze(o, u) {
+  var f = u >= L3_CFG.fadeStart ? 0 : Math.min(1, (L3_CFG.fadeStart - u) / (L3_CFG.fadeStart - 0.02)), band = Math.round(f * 6);
+  o.img.style.opacity = f === 0 ? '' : Math.max(0, 1 - Math.pow(f, 1.5)).toFixed(2);
+  if (band !== o.band) { o.band = band; var g = band / 6; o.img.style.filter = g === 0 ? '' : 'brightness(' + (0.82 + 0.35 * g).toFixed(2) + ') saturate(' + (0.9 - 0.5 * g).toFixed(2) + ') sepia(' + (0.55 * g).toFixed(2) + ') hue-rotate(' + (-12 * g).toFixed(0) + 'deg)'; }
+}
+function scen3Place(o, k, spawnS, ground, def, mirror, lift, size, z, uTop) {   // put one pooled element where the receding prop with spawn time spawnS is
+  var u = L3_SCEN_U0 - (state3.scen - spawnS) * L3_CFG.sceneryFactor / L3_TRAVEL, vis = u > 0.02 && u <= (uTop || L3_SCEN_U0) + 0.001;
+  if (o.k !== k) { o.k = k; o.img.src = def.src; o.img.width = def.w; o.img.height = def.h; o.img.style.left = (-def.w / 2) + 'px'; o.img.style.top = (lift ? -def.h : -def.h / 2) + 'px'; if (z !== undefined) o.el.style.zIndex = z; }
   if (vis !== o.shown) { o.el.style.display = vis ? 'block' : 'none'; o.shown = vis; }
-  if (!vis) return;
-  var p = scen3Pos(u, ground);
-  o.el.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px)';
-  o.img.style.transform = 'scale(' + (p.s * def.sc * (mirror ? -1 : 1)).toFixed(4) + ',' + (p.s * def.sc).toFixed(4) + ')';
-  o.img.style.opacity = u < 0.1 ? (u / 0.1).toFixed(2) : '';
+  if (!vis) return false;
+  var p = scen3Pos(u, ground), m = p.s * def.sc * (size || 1);
+  o.el.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px) scale(' + (m * (mirror ? -1 : 1)).toFixed(4) + ',' + m.toFixed(4) + ')';   // the scale lives on the element's own layer, so the picture and its filter are drawn once and only composited as it grows
+  if (lift || def.haze) scen3Haze(o, u); else o.img.style.opacity = u < 0.1 ? (u / 0.1).toFixed(2) : '';
+  return true;
+}
+function drawRidge3() {   // the two ridge strips slide slowly towards the volcano; the strip is wider than its box and tiles, so only a transform changes
+  if (!scen3.ridge) return;
+  var off = (state3.scen * L3_CFG.ridgeSpeed * 100) % (L3_RIDGE.w * L3_RIDGE.sc);
+  scen3.ridge[0].style.transform = 'translate3d(' + (off - L3_RIDGE.w * L3_RIDGE.sc).toFixed(1) + 'px,0,0)';
+  scen3.ridge[1].style.transform = 'translate3d(' + (-off).toFixed(1) + 'px,0,0)';
 }
 function drawScenery3() {
-  var gap = L3_CFG.sceneryGapMs / 1000, life = scen3Life(), kmax = Math.floor(state3.scen / gap), kmin = Math.ceil((state3.scen - life) / gap);
-  var n = scen3.props.length;
-  for (var j = 0; j < n; j++) {
-    var k = kmax - scen3Mod(kmax - j, n), o = scen3.props[j];
-    if (k < kmin) { if (o.shown) { o.el.style.display = 'none'; o.shown = false; } continue; }
-    var side = scen3Mod(k, 2) === 0 ? -1 : 1, def = L3_PROPS[L3_PROP_ORDER[scen3Mod(k, L3_PROP_ORDER.length)]];
-    scen3Place(o, k, k * gap, side * (L3_PROP_G + scen3Mod(k * 53, 120)), def, scen3Mod(k, 3) === 0, true);
-  }
-  var dgap = gap / 2, dmax = Math.floor(state3.scen / dgap), dmin = Math.ceil((state3.scen - life) / dgap);
+  drawRidge3();
+  var life = scen3Life();
+  scen3.frame = (scen3.frame || 0) + 1;
+  scen3.streams.concat(scen3.fill).forEach(function (st) {
+    var row = st.def, n = st.els.length, sc = state3.scen + st.phase, pitch = st.pitch, inner = st.inner, cm = st.cmax, span = cm - st.cmin + 1, decal = row.kind === 'decal', defs = decal ? L3_GROUND : L3_PROPS;
+    var cmax = Math.floor((sc - st.ageMin) / pitch), cmin = Math.floor((sc - life) / pitch) - 1, c, j;
+    for (c = cmin; c <= cmax; c++) {
+      var cn = st.cmin + Math.min(span - 1, Math.floor(scen3H(c, st.hid, st.side * 3) * span)), cg = row.g + row.spread * scen3H(c, st.hid, st.side * 5);
+      for (j = 0; j < cn; j++) {
+        var idx = c * cm + j, o = st.els[scen3Mod(idx, n)], h = scen3H(c * 16 + j, st.hid, st.side * 11);
+        var def = row.mix ? defs[row.mix[Math.floor(h * row.mix.length) % row.mix.length]] : defs[Math.floor(h * defs.length) % defs.length], hs = scen3H(c * 16 + j, st.hid, 13), size, ground;
+        if (decal) {     // the ground texture: small flat pictures, thick near the road and thinning out towards the horizon, never nearer than edgeClearPx to the sand
+          size = row.size + row.sizeV * hs; ground = st.side * (Math.max(scen3Clear(st.side, def.w / 2 * def.sc * size), row.gMin || 0) + row.spread * Math.pow(scen3H(c * 16 + j, st.hid, 17), row.pow));
+        } else {
+          size = (0.8 + 0.5 * hs) * row.sc; ground = st.side * Math.max(cg + (scen3H(c * 16 + j, st.hid, 17) - 0.5) * 160, scen3Clear(st.side, def.w / 2 * def.sc * size));
+        }
+        o.stamp = scen3.frame;
+        var z = decal ? 0 : (row.rank === 'back' ? 0 : (scen3Rows() - (row.rank || st.row)) * 200000) + 100000 - scen3Mod(idx, 100000);   // far rows are under near rows; inside a row the one nearer the camera (spawned earlier) is on top
+        scen3Place(o, idx, c * pitch + j * inner - st.phase, ground, def, scen3H(c * 16 + j, st.hid, 19) < 0.5, !decal, size, z, st.uTop);
+      }
+    }
+    for (j = 0; j < n; j++) { var q = st.els[j]; if (q.stamp !== scen3.frame && q.shown) { q.el.style.display = 'none'; q.shown = false; } }
+  });
+  var cg = L3_CFG.crackGapS, cn = scen3.cracks[0].els.length;
+  scen3.cracks.forEach(function (cs) {     // flat ground decals (lava cracks, pebbles) that run past as a speed cue, under the props
+    var sc = state3.scen + cs.phase, kmax = Math.floor(sc / cg), kmin = Math.floor((sc - life) / cg) - 1;
+    for (var k = kmin; k <= kmax; k++) {
+      var o = cs.els[scen3Mod(k, cn)], h = scen3H(k, cs.side, 31), def = L3_GROUND[Math.floor(scen3H(k, cs.side, 37) * L3_GROUND.length) % L3_GROUND.length];
+      o.stamp = scen3.frame;
+      var csz = 1 + 0.7 * scen3H(k, cs.side, 43);
+      scen3Place(o, k, k * cg - cs.phase, cs.side * (scen3Clear(cs.side, def.w / 2 * def.sc * csz) + 700 * h), def, scen3H(k, cs.side, 41) < 0.5, false, csz, 0);
+    }
+    for (var j = 0; j < cn; j++) { var q = cs.els[j]; if (q.stamp !== scen3.frame && q.shown) { q.el.style.display = 'none'; q.shown = false; } }
+  });
+  var gap = L3_CFG.sceneryGapMs / 1000, dgap = gap / 2, dmax = Math.floor(state3.scen / dgap), dmin = Math.ceil((state3.scen - life) / dgap);
   scen3.dashes.forEach(function (col, ci) {
     var ground = (ci + 1 - L3_CFG.laneCount / 2) * lane3Spacing(), m = col.length;
     for (var j = 0; j < m; j++) {

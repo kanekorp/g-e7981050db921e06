@@ -73,10 +73,14 @@
   #l3bg { background: url('volcano_chase_bg_v2.jpg') center/cover no-repeat; transform: scale(1.03); will-change: transform; }
   #l3lines { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.3; pointer-events: none; z-index: 30; }
   #scen3 { position: absolute; inset: 0; z-index: 5; pointer-events: none; }   /* receding roadside props and path dashes, under everything that comes at Zacky */
-  #scen3 .sp { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; will-change: transform; }
+  #scen3 .sp { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; transform-origin: 0 0; }   /* no will-change: ~80 promoted layers cost more than repainting the few moving pictures when there is no GPU */
   #scen3 .sp img { position: absolute; max-width: none; transform-origin: 50% 100%; }
   #scen3 .sp.prop img { filter: brightness(0.82) saturate(0.9); }               /* plain and a little darker, no shadow, so it reads as left behind */
   #scen3 .sp.dash img { transform-origin: 50% 50%; opacity: 0.8; }
+  #scen3 .sp.crack img { transform-origin: 50% 50%; }
+  #ridge3 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }   /* two rocky ridge strips just under the horizon, either side of the volcano (inside #l3bg, so they shake with it) */
+  #ridge3 .rg { position: absolute; overflow: hidden; opacity: 0.9; filter: saturate(0.85) brightness(1.05); }
+  #ridge3 .rg div { position: absolute; left: 0; top: 0; background-repeat: repeat-x; will-change: transform; opacity: .9; filter: saturate(.85) brightness(1.05); }
   #launch3 { position: absolute; inset: 0; z-index: 8; pointer-events: none; }   /* rocks thrown out of the crater */
   #launch3 img { position: absolute; left: 0; top: 0; max-width: none; display: none; transform-origin: 50% 50%; filter: drop-shadow(0 0 14px #ff7a1a); will-change: transform; }
   #world3 { position: absolute; inset: 0; z-index: 10; }
@@ -211,7 +215,7 @@
 
   <!-- ════════════════════ LEVEL 3 (lava chase) ════════════════════ -->
   <div id="level3" class="screen">
-    <div id="l3cam"><div id="l3bg"><img id="glow3" src="volcano_glow_v2.png" alt=""><div id="smoke3"></div><img id="spurt3" src="lava_spurt.png" alt=""></div></div>
+    <div id="l3cam"><div id="l3bg"><div id="ridge3"></div><img id="glow3" src="volcano_glow_v2.png" alt=""><div id="smoke3"></div><img id="spurt3" src="lava_spurt.png" alt=""></div></div>
     <img id="l3lines" src="speed_lines.png" alt="">
     <div id="scen3"></div>
     <div id="launch3"></div>
@@ -282,14 +286,24 @@ const L3_DEFAULTS = {
   hintsOn: true,               // the "Press Space to jump!" and arrows hints (each shows once)
   /* ── level 3 v2 ── */
   sceneryGapMs: 600,           // a new roadside prop (rock, tree, post, bush) every this many ms of running; they recede towards the volcano
-  scenerySpeed: 0.55,          // how fast the scenery recedes, as a fraction of how fast rocks and gems come at Zacky (under 1, so they catch him up)
+  sceneryFactor: 0.78,         // how fast the scenery recedes, as a fraction of how fast rocks and gems come at Zacky (0.70 to 0.85: the sides move nearly as fast as the rocks)
+  itemVisibleS: 2.5,           // seconds a rock or gem is visible, from the volcano to Zacky (was 2.0; bigger = slower rocks)
+  propGapS: 0.35,              // a roadside prop (or the start of a cluster) every this many seconds of running on each side (0.3 to 0.4)
+  clusterMin: 2,               // props in a cluster, fewest and most (a cluster is a small group of mixed props, then a small gap)
+  clusterMax: 4,
+  depthRows: 3,                // rows of props on each side (2 or 3): a near row, a middle row and a far row
+  fadeStart: 0.35,             // props fade in from the horizon until they are this far down the road (0 to 1, 1 = bottom of the screen) and tint towards the haze while far away
+  ridgeSpeed: 0.3,             // the rocky ridge strips slide at this many x100 px per second of running (0.3 = 30 px/s)
+  groundFill: 1,               // 1 = fill the bare plain at the sides (a gap row, a dense strip under the horizon, a ground texture of cracks and pebbles); 0 = off (a few fewer pictures to draw on a slow device)
+  edgeClearPx: 100,            // nothing on the off-road ground (props, cracks, pebbles) is placed closer than this many ground px to the sand edge of the road (100 to 150)
+  crackGapS: 0.7,              // a lava crack or pebble patch on the ground every this many seconds of running
   rockLaunchMs: 800,           // a lava rock arcs out of the volcano this many ms before it appears on the path
   shakePx: 8,                  // how far the background shakes on a big launch (6 to 10; 0 turns the shake off; Zacky and the HUD never shake)
   smokeCount: 6,               // puffs in the smoke column over the volcano (5 to 8)
   glowPulseMs: 2200,           // one slow pulse of the crater glow (never faster than 3 pulses a second)
   carArriveMs: 1500,           // the car grows out of the distance (the end of the donut dash)
   driveOffMs: 2400,            // the car drives off past the camera
-  donutAtSeconds: 31,          // the volcano throws the donut at this run second whatever the gem count (the last rock has gone by at 30.5s)
+  donutAtSeconds: 31.5,        // the volcano throws the donut at this run second whatever the gem count (the last rock has gone by at 31.1s)
   boostSpeed: 2,               // donut boost: the scenery recedes this many times faster
   boostMs: 3500,               // how long the donut boost lasts (the dash to the car)
   rumbleVolume: 0.2            // the loud volcano rumble (0 to 1, always kept below the music at 0.5)
@@ -360,7 +374,7 @@ const TITLE_CAR = window.ZACKY_TITLE_CAR !== undefined ? window.ZACKY_TITLE_CAR 
   document.getElementById('title').style.backgroundImage = "url('" + TITLE_BG + "')";
   var car = document.getElementById('titleCar'); car.src = TITLE_CAR; car.style.display = 'block';
 })();
-const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png', 'volcano_chase_bg_v2.jpg', 'speed_lines.png', 'Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zacky_run_front_3.png', 'Zacky_run_front_4.png', 'Zacky_jump_front.png', 'Zacky_stumble_front.png', 'lava_wave_plain.png', 'volcano_glow_v2.png', 'confetti.png', 'sparkle.png', 'smoke_puff.png', 'lava_spurt.png', 'lava_rock.png', 'lava_rock_small.png', 'tree_side.png', 'rock_side.png', 'bush_side.png', 'post_side.png', 'path_dash.png', 'donut.png', 'car_front_empty.png', 'Zacky_in_car_front.png'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
+const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png', 'volcano_chase_bg_v2.jpg', 'speed_lines.png', 'Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zacky_run_front_3.png', 'Zacky_run_front_4.png', 'Zacky_jump_front.png', 'Zacky_stumble_front.png', 'lava_wave_plain.png', 'volcano_glow_v2.png', 'confetti.png', 'sparkle.png', 'smoke_puff.png', 'lava_spurt.png', 'lava_rock.png', 'lava_rock_small.png', 'tree_side.png', 'rock_side.png', 'bush_side.png', 'post_side.png', 'path_dash.png', 'boulder_big.png', 'rock_cluster.png', 'charred_tree_2.png', 'stump.png', 'lava_vent.png', 'crystal_rocks.png', 'fence_post_2.png', 'ground_crack_1.png', 'ground_crack_2.png', 'pebbles.png', 'ridge_left.png', 'ridge_right.png', 'donut.png', 'car_front_empty.png', 'Zacky_in_car_front.png'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
 function preload(urls) {
   var jobs = urls.map(function (u) {
     return new Promise(function (resolve) {
@@ -457,10 +471,10 @@ function startLevel1() {
 keyHandlers.push(function (key, isRepeat) {
   if (screenLocked) return;
   if (stage === 'title') { startLevel1(); return; }              // any key starts; the same key press goes no further into the game
-  if (stage === 'level1' && ZackyShared.isJumpKey(key)) { ZackyShared.pressJump(player); bounceHint.clear(); }
+  if (stage === 'level1' && ZackyShared.isJumpKey(key)) { ZackyShared.pressJump(player); player.hopFwd = (key === ' '); bounceHint.clear(); }   // Space hops forward, the up arrow jumps straight up
   if (stage === 'level1' && key === 'Enter' && !state.finished) talkToPup();
   if (stage === 'transition' && key === 'Enter') endTransition();
-  if (stage === 'complete' && key === 'Enter') startLevel2();                       // level 1 -> level 2
+  if (stage === 'complete' && (key === 'Enter' || (key === ' ' && !isRepeat))) startLevel2();   // level 1 -> level 2 (Space too, so a child playing with Space alone is not stuck; a held Space never skips it)
   if (stage === 'level2') level2Key(key, isRepeat);
   if (stage === 'celebrate' && key === 'Enter') startLevel3();                        // level 2's end -> level 3
   if (stage === 'level3') level3Key(key, isRepeat);
@@ -480,9 +494,7 @@ const POOLS = [                                        // lava pools sit on the 
   { x: 1000, w: 240 },
 ];
 const POOL_SURFACE = FLOOR_Y - 40;                     // feet below this line inside a pool = touching lava
-const CHECKPOINTS = [{ x: 100 }, { x: 850 }, { x: 1420 }];         // the first is the spawn point
 const SPAWN = { x: 100, y: FLOOR_Y };
-const FLAG_DX = -150;                                  // checkpoint flags are drawn this far left of the respawn spot (the spot is where Zacky stands, and the flag sat on his face)
 const MONSTER = { min: 1520, max: 1600, speed: 80, w: 70, h: 80, sprite: 150 };   // patrols the floor (x = centre)
 let walkSpeed = 420;                                   // Zacky's walking speed in the level being played
 let curPlatforms = PLATFORMS;                         // the platforms of the level being played (level 2 has none)
@@ -501,23 +513,19 @@ const ZACKY_SCALE = 1.43;                               // Zacky is drawn 1.43x 
 const HALF_W = 37, BODY_H = 257;                       // Zacky's hitbox (34 and 234 before the last 1.1x; 28 and 180 originally)
 const STAGE_W = 1920;
 
+const HOP_FWD = { dist: 200, airS: 2 * 1100 / 2600 };      // level 1: a Space jump also drifts 200px the way he faces (the air time of a jump on the floor is 2 x JUMP_V / GRAVITY)
 const BOUNCE = { floorY: FLOOR_Y, clearance: 70, dur: 0.55, arc: 190, minX: HALF_W + 12, maxX: STAGE_W - HALF_W - 12 };   // lava soft bounce: lands 70px outside the pool, past the 25px lava overhang plus Zacky's half width, so a bounce can never end in lava
+const BOUNCE1 = Object.assign({}, BOUNCE, { dur: 0.7, arc: 120 });      // level 1 only (Nov 2): a gentler lava bounce, 0.7s and a lower peak; level 2 keeps BOUNCE as it was
 const player = { x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, onGround: true, face: 1, jumpBuffer: 0, walkT: 0, invuln: 0 };
-const state = { gems: 0, finished: false, hintT: 0, bubbleT: 0, checkpoint: 0, deaths: 0, monsterX: MONSTER.min, monsterDir: 1, bounce: null, bounces: 0 };
+const state = { gems: 0, finished: false, hintT: 0, bubbleT: 0, deaths: 0, monsterX: MONSTER.min, monsterDir: 1, bounce: null, bounces: 0 };
 let monsterEl = null, doorEl = null, bubbleEl = null, tipEl = null;
 const gemEls = [];
-const flagEls = [];
 const worldEl = document.getElementById('world');
 const zackyEl = document.getElementById('zacky');
 
 (function buildLevel() {
   PLATFORMS.forEach(function (p) { addImg('lava_platform.png', p.x, p.y, p.w, 'platform', 3); });
   POOLS.forEach(function (p) { addImg('lava_pool.png', p.x, FLOOR_Y - 25, p.w, 'pool', 4); });
-  CHECKPOINTS.forEach(function (c, i) {
-    var f = document.createElement('div'); f.className = 'abs flag' + (i === 0 ? ' on' : '');
-    if (i === 0) f.style.display = 'none';   // the start flag sat on Zacky's face: the start is still a checkpoint but draws nothing
-    f.style.left = (c.x + FLAG_DX) + 'px'; f.style.top = (FLOOR_Y - 110) + 'px'; worldEl.appendChild(f); flagEls.push(f);
-  });
   GEMS.forEach(function (g) { var e = addImg('gem.png', g.x - 27, g.y - 32, 54, 'gem', 6); gemEls.push(e); });
   addImg('friendly_character.png', PUP.x - 66, FLOOR_Y + 6 - PUP.h, null, 'pup', 5).style.height = PUP.h + 'px';
   doorEl = addImg('exit_door.png', DOOR.x - 114, FLOOR_Y + 4 - DOOR.h, null, 'door locked', 2); doorEl.style.height = DOOR.h + 'px';
@@ -537,13 +545,12 @@ function addImg(src, x, y, w, cls, z) {
 
 function resetLevel() {
   player.x = SPAWN.x; player.y = SPAWN.y; player.vx = 0; player.vy = 0; player.onGround = true; player.face = 1;
-  player.jumpBuffer = 0; player.coyote = 0; player.walkT = 0; player.invuln = 0;
+  player.jumpBuffer = 0; player.coyote = 0; player.walkT = 0; player.invuln = 0; player.hopFwd = false; player.hopVx = 0;
   cutVoice(); bounceHint.clear(); state.gems = 0; state.finished = false; state.hintT = 0; state.bubbleT = 0; state.pupGreeted = false; state.bubbleStay = false;
   gemEls.forEach(function (e) { e.classList.remove('got'); });
   setDoor(); showCount(); bubbleEl.style.display = 'none'; tipEl.style.display = 'none';
   zackyEl.style.opacity = ''; zackyEl.src = 'Zacky_stand.png';
-  state.checkpoint = 0; state.deaths = 0; state.bounce = null; state.bounces = 0; state.monsterX = MONSTER.min; state.monsterDir = 1;
-  flagEls.forEach(function (f, i) { f.classList.toggle('on', i === 0); });
+  state.deaths = 0; state.bounce = null; state.bounces = 0; state.monsterX = MONSTER.min; state.monsterDir = 1; state.monsterSide = -1;
   zackyEl.classList.remove('blink');
   render();
 }
@@ -639,12 +646,38 @@ function endTransition() {
 function updateBounce(dt, st) {                          // Zacky is mid-hop out of the lava: a fixed path, no input (st = the level's state)
   st = st || state;
   var flying = ZackyShared.stepBounce(st.bounce, dt, player);
-  player.face = st.bounce.side;                       // faces the way he is going
-  player.onGround = !flying; player.jumpBuffer = 0; player.coyote = 0;
+  player.face = st.bounce.face || st.bounce.side;     // faces the way he is going (level 1 bounces set .face: he keeps facing the hazard)
+  player.onGround = !flying; player.jumpBuffer = 0; player.coyote = 0; player.hopVx = 0;
   player.pose = flying ? curPoses.jump : curPoses.stand;
   if (!zackyEl.src.endsWith(player.pose)) zackyEl.src = player.pose;
   if (!walkSfx.paused) walkSfx.pause();
   if (!flying) st.bounce = null;
+}
+// Space hop length (level 1, Nov 2): the usual 200px, but when that would land on the floor in lava or on the monster's patch, take the nearest length that lands somewhere safe (on a platform counts)
+const HOP_TRIES = [200, 230, 170, 260, 140, 300, 110, 80, 330];
+const HOP_MARGIN = 12;
+function hopLanding(dir, dist) {                          // where a hop of this length ends: the same physics as updatePlayer, stepped ahead
+  var x = player.x, y = player.y, vy = -JUMP_V, vx = dir * dist / HOP_FWD.airS, dt = 1 / 120;
+  for (var i = 0; i < 400; i++) {
+    var prevY = y;
+    x = Math.min(STAGE_W - HALF_W - 12, Math.max(HALF_W + 12, x + vx * dt));
+    vy = Math.min(MAX_FALL, vy + GRAVITY * dt); y += vy * dt;
+    if (vy >= 0) {
+      var land = (prevY <= FLOOR_Y && y >= FLOOR_Y) ? FLOOR_Y : null;
+      for (var k = 0; k < curPlatforms.length; k++) { var q = curPlatforms[k]; if (ZackyShared.overPlatform(x, HALF_W, q.x, q.w) && prevY <= q.y + 0.01 && y >= q.y) land = Math.min(land === null ? 1e9 : land, q.y); }
+      if (land !== null) return { x: x, y: land };
+    }
+  }
+  return { x: x, y: FLOOR_Y };
+}
+function hopLandingSafe(l) {
+  if (l.y < FLOOR_Y - 1) return true;                     // on a platform
+  for (var i = 0; i < POOLS.length; i++) if (l.x > POOLS[i].x + LAVA_EDGE - HALF_W - HOP_MARGIN && l.x < POOLS[i].x + POOLS[i].w - LAVA_EDGE + HALF_W + HOP_MARGIN) return false;
+  return !(l.x > MONSTER.min - MONSTER.w / 2 - HALF_W - HOP_MARGIN && l.x < MONSTER.max + MONSTER.w / 2 + HALF_W + HOP_MARGIN);
+}
+function hopDist(dir) {
+  for (var i = 0; i < HOP_TRIES.length; i++) if (hopLandingSafe(hopLanding(dir, HOP_TRIES[i]))) return HOP_TRIES[i];
+  return HOP_FWD.dist;
 }
 function updatePlayer(dt) {
   var dir = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
@@ -652,7 +685,9 @@ function updatePlayer(dt) {
   if (dir) player.face = dir;
   if (ZackyShared.stepJump(player, dt)) {                // on the ground, or within 120ms of leaving a ledge
     player.vy = -JUMP_V; player.onGround = false; sfx(jumpSfx, 0.5);
+    player.hopVx = (stage === 'level1' && player.hopFwd) ? player.face * hopDist(player.face) / HOP_FWD.airS : 0;   // Space alone gets a child through level 1
   }
+  if (!dir && player.hopVx && !player.onGround) player.vx = player.hopVx;   // the arrows still steer in the air; with none held, the hop drifts forward
   var prevY = player.y;
   player.x = Math.min(STAGE_W - HALF_W - 12, Math.max(HALF_W + 12, player.x + player.vx * dt));   // can't leave the stage
   player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
@@ -666,7 +701,7 @@ function updatePlayer(dt) {
     });
   }
   if (player.y > FLOOR_Y) land = FLOOR_Y;                              // never below the floor
-  if (land !== null) { player.y = land; player.vy = 0; player.onGround = true; }
+  if (land !== null) { player.y = land; player.vy = 0; player.onGround = true; player.hopVx = 0; }
   else if (player.vy !== 0) player.onGround = false;
   // animation + footsteps
   var moving = dir !== 0 && player.onGround;
@@ -684,13 +719,11 @@ function updateHazards(dt) {
   state.monsterX += state.monsterDir * MONSTER.speed * dt;
   if (state.monsterX >= MONSTER.max) { state.monsterX = MONSTER.max; state.monsterDir = -1; }
   if (state.monsterX <= MONSTER.min) { state.monsterX = MONSTER.min; state.monsterDir = 1; }
-  // checkpoints: walk past a flag to save your place
-  CHECKPOINTS.forEach(function (c, i) {
-    if (i > state.checkpoint && Math.abs(player.x - c.x) < 60) {
-      state.checkpoint = i;
-      flagEls.forEach(function (f, k) { f.classList.toggle('on', k <= i); });
-    }
-  });
+  var touching = player.x + HALF_W > state.monsterX - MONSTER.w / 2 && player.x - HALF_W < state.monsterX + MONSTER.w / 2 && player.y > FLOOR_Y - MONSTER.h;
+  // The side he came from: a touch always pushes him back to that side, never through the monster. It is only re-read while he is clear of the monster sideways, or standing on something:
+  // in the air above the monster (a jump or a fall that crosses its middle) it keeps the side he took off from, so a touch on the way down still sends him back the way he came.
+  var overX = player.x + HALF_W > state.monsterX - MONSTER.w / 2 && player.x - HALF_W < state.monsterX + MONSTER.w / 2;
+  if (!overX || (player.onGround && !touching)) state.monsterSide = player.x < state.monsterX ? -1 : 1;
   if (state.bounce) return;                             // mid-hop: nothing can touch him
   // lava is gentle: it only bounces him out (even right after a respawn), it never costs anything
   var pool = ZackyShared.findLavaPool(player, POOLS, { halfW: HALF_W, edge: LAVA_EDGE, surfaceY: POOL_SURFACE });
@@ -703,23 +736,25 @@ function updateHazards(dt) {
   var l = player.x - HALF_W, r = player.x + HALF_W, top = player.y - BODY_H;
   var hitMonster = r > state.monsterX - MONSTER.w / 2 && l < state.monsterX + MONSTER.w / 2 &&
                    player.y > FLOOR_Y - MONSTER.h && top < FLOOR_Y;
-  if (hitMonster) sendToCheckpoint();
+  if (hitMonster) bounceFromMonster();
 }
 function startLavaBounce(pool) {
-  closeBubble(); bounceHint.bump(); state.bounce = ZackyShared.startBounce(player, pool, BOUNCE);
+  closeBubble(); bounceHint.bump(); state.bounce = ZackyShared.startBounce(player, pool, BOUNCE1); state.bounce.face = -state.bounce.side;   // he lands still facing the pool, so Space hops him on across it
   state.bounces = (state.bounces || 0) + 1;
   playBoing();
 }
-function sendToCheckpoint() {                            // the lava monster: back to the last flag
-  state.deaths++;
-  closeBubble();                                        // a hint from before the fall isn't wanted after it
-  sfx(hissSfx, 0.6);
-  var c = CHECKPOINTS[state.checkpoint];
-  player.x = c.x; player.y = FLOOR_Y; player.vx = 0; player.vy = 0; player.onGround = true; player.jumpBuffer = 0; player.coyote = 0;
-  player.invuln = 1.2;                                  // a moment of safety so a restart can never trap him
-  zackyEl.classList.add('blink');
-  var fl = document.getElementById('flash'); fl.classList.add('on');
-  setTimeout(function () { fl.classList.remove('on'); }, 80);
+const MONSTER_BOUNCE = { push: 250, dur: 0.7, arc: 60, pause: 0.4 };   // a monster touch: a soft hop 250px backwards, no respawn, no flash
+function bounceFromMonster() {                           // the lava monster: a soft bounce away from it (the same hop as the lava), Zacky keeps playing
+  state.deaths++;                                       // counts the touches (tests and stats), it costs nothing
+  closeBubble(); bounceHint.bump();
+  var away = state.monsterSide || -1;                    // back to the side he came from (a hop that crosses the monster's middle used to push him forward, onto the door)
+  var tx = Math.min(BOUNCE.maxX, Math.max(BOUNCE.minX, player.x + away * MONSTER_BOUNCE.push));
+  if (away > 0) tx = Math.min(tx, DOOR.x - DOOR_REACH - 10);   // from the far side it must not push him onto the door either
+  var pool = ZackyShared.findLavaPool({ x: tx, y: FLOOR_Y }, POOLS, { halfW: HALF_W, edge: LAVA_EDGE, surfaceY: POOL_SURFACE });
+  if (pool) tx = away < 0 ? pool.x + pool.w + BOUNCE.clearance : pool.x - BOUNCE.clearance;   // never land in lava: stop just outside the pool
+  state.bounce = { t: 0, dur: MONSTER_BOUNCE.dur, arc: MONSTER_BOUNCE.arc, x0: player.x, y0: player.y, x1: tx, y1: FLOOR_Y, side: away, face: -away };
+  player.invuln = MONSTER_BOUNCE.pause;                 // a short pause after landing so the same touch cannot catch him twice
+  playBoing();
 }
 
 function render() {
