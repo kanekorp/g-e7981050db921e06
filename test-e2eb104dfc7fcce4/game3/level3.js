@@ -174,8 +174,11 @@ const rav3 = { bands: [], near: [], ash: [], ground: [] };
    `side` = left/right art anchored just outside the sand (scen3Clear). `corner` = near lips at the bottom corners. */
 const L3_RAV_BANDS = [
   { id: 'corridor', full: true, pinned: true, srcL: 'ravine_corridor_left.png', srcR: 'ravine_corridor_right.png', w: 1920, h: 1080, n: 1, gapU: null, factor: 'scenery', z: 2, opac: 0.9, parent: 'mid' },
-  { id: 'shelf_mid', full: false, srcL: 'shelf_mid_left.png', srcR: 'shelf_mid_right.png', w: 700, h: 280, n: 2, gapU: null, factor: 'scenery', z: 4, opac: 0.4, parent: 'mid', gMul: 1.4, lift: false, uMin: 0.4, uMax: 0.95 },
-  { id: 'lip_near', full: false, srcL: 'lip_near_left.png', srcR: 'lip_near_right.png', w: 900, h: 420, n: 3, gapU: null, factor: 'near', z: 8, opac: 1, parent: 'near', gMul: 1.15, lift: true, uMin: 0.65, uMax: 1.12 }
+  /* shelf art is an opaque rock clump. Drawing it at 0.4 ghosted a rectangle over the corridor and the sand.
+     innerL/innerR are px from the anchor to the inner opaque pixel, so the clump stays outside the path. */
+  { id: 'shelf_mid', full: false, srcL: 'shelf_mid_left.png', srcR: 'shelf_mid_right.png', w: 700, h: 280, n: 2, gapU: null, factor: 'scenery', z: 4, opac: 1, parent: 'mid', gMul: 1.4, lift: false, uMin: 0.5, uMax: 0.92, innerL: 348, innerR: 324 },
+  /* lips stay large and low. A lower uMin let the flat plateau shrink into a block over the scenery. */
+  { id: 'lip_near', full: false, srcL: 'lip_near_left.png', srcR: 'lip_near_right.png', w: 900, h: 420, n: 3, gapU: null, factor: 'near', z: 8, opac: 1, parent: 'near', gMul: 1.15, lift: true, uMin: 0.84, uMax: 1.12, innerL: 160, innerR: 110 }
 ];
 function rav3Factor(kind) {
   if (kind === 'far') return L3_CFG.sceneryFactor * (L3_CFG.ridgeFarSpeed || 0.2);
@@ -281,10 +284,10 @@ function drawRavine3() {
           o.el.style.opacity = (band.opac * edge).toFixed(2);
         }
       } else {
-        // side accents sit clearly outside the sand; lips hug the near corners
-        var half = band.w / 2;
-        // keep the inner edge of side art past the sand: clear margin + a fraction of the art width
-        var ground = o.side * Math.max(scen3Clear(o.side, half * 0.55), (L3_EDGE[String(o.side)] + 80) * (band.gMul || 1));
+        // side accents sit outside the sand. innerL/innerR is the opaque reach toward the road, in image px.
+        var inward = (o.side < 0 ? band.innerL : band.innerR);
+        if (inward == null) inward = band.w / 2;
+        var ground = o.side * (L3_EDGE[String(o.side)] + L3_CFG.edgeClearPx + inward * (band.gMul || 1));
         var p = scen3Pos(u, ground);
         var m = p.s * (band.gMul || 1);
         o.el.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px) scale(' + m.toFixed(4) + ',' + m.toFixed(4) + ')';
