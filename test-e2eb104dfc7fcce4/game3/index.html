@@ -46,6 +46,14 @@
   #titleCar { position: absolute; left: 0; top: 437px; width: 400px; height: 379px; z-index: 1; display: none; pointer-events: none; animation: carDrive 11s linear infinite; }
   @keyframes carDrive { from { transform: translateX(-460px); } to { transform: translateX(1980px); } }
   #title .press { bottom: 150px; animation: blink 1.4s ease-in-out infinite; }
+  /* Staging playtest only: a labelled shortcut onto the ravine. Production has no such control. */
+  #playLevel3 {
+    position: absolute; left: 50%; top: 28px; transform: translateX(-50%); z-index: 6;
+    display: block; cursor: pointer; font: inherit; font-size: 42px; white-space: nowrap;
+    background: rgba(0,0,0,0.72); color: #fff; border: 5px solid #7dffb3; border-radius: 40px;
+    padding: 10px 36px; text-shadow: 2px 2px 0 #000;
+  }
+  #playLevel3 span { display: block; margin-top: 4px; font-size: 24px; color: #ffd84d; text-shadow: 1px 1px 0 #000; }
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
   /* ─── LEVEL 1 ─── */
@@ -186,6 +194,7 @@
   <!-- ════════════════════ TITLE ════════════════════ -->
   <div id="title" class="screen">
     <img id="titleCar" alt="">
+    <button type="button" id="playLevel3">Play level 3<span>press 3</span></button>
     <div class="press">Press any key to start</div>
   </div>
 
@@ -345,8 +354,10 @@ window.STAGE_SCALE = 1;
 /* ═══════════════ INPUT: keyboard allowlist, pointer lockout ═══════════════ */
 ['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchend', 'touchmove']
   .forEach(function (evtName) {
-    document.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); },
-      { capture: true, passive: false });
+    document.addEventListener(evtName, function (e) {
+      if (e.target && e.target.closest && e.target.closest('#playLevel3')) return;   // the staging "Play level 3" control is the one pointer target
+      e.preventDefault(); e.stopPropagation();
+    }, { capture: true, passive: false });
   });
 
 const ALLOWED_KEYS = new Set([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape']);
@@ -357,6 +368,13 @@ document.addEventListener('keydown', function (e) {
   if (stage === 'title') {
     // title screen: ANY key starts the game (letters, numbers, Shift, Tab...), except F1-F12 and Esc
     if (/^F\d+$/.test(e.key) || e.key === 'Escape') return;       // F1-F12 stay browser keys, and Esc stays free to leave fullscreen: neither starts the game
+    if (e.key === '3') {                                          // staging shortcut: one tap opens the ravine, instead of level 1
+      e.preventDefault();
+      if (e.repeat || screenLocked) return;
+      unlockAudio();
+      startLevel3();
+      return;
+    }
     e.preventDefault();                                           // Tab must not move focus off the page
     if (e.repeat) return;                                         // a held key never counts, and never double-fires
     keys[e.key] = true;
@@ -409,8 +427,9 @@ function preload(urls) {
 preload(PRELOAD).then(function () {
   document.getElementById('loading').classList.remove('active');
   document.getElementById('loading').style.display = 'none';
-  showScreen('title', function () { playMusic(titleMusic); });
   window.gameReady = true;
+  if (new URLSearchParams(location.search).get('level') === '3') startLevel3();   // staging URL .../game3/?level=3 opens the ravine ready screen
+  else showScreen('title', function () { playMusic(titleMusic); });
 });
 
 /* ═══════════════ MUSIC ═══════════════ */
@@ -497,6 +516,11 @@ keyHandlers.push(function (key, isRepeat) {
   if (stage === 'celebrate' && key === 'Enter') startLevel3();                        // level 2's end -> level 3
   if (stage === 'level3') level3Key(key, isRepeat);
   if (stage === 'celebrate3') level3Done3Key(key);                                    // level 3's end -> back to the title
+});
+document.getElementById('playLevel3').addEventListener('click', function () {
+  if (stage !== 'title' || screenLocked) return;
+  unlockAudio();
+  startLevel3();
 });
 
 /* ═════════════════════════════════════════════════
