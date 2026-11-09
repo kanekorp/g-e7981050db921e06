@@ -46,7 +46,7 @@
   #titleCar { position: absolute; left: 0; top: 437px; width: 400px; height: 379px; z-index: 1; display: none; pointer-events: none; animation: carDrive 11s linear infinite; }
   @keyframes carDrive { from { transform: translateX(-460px); } to { transform: translateX(1980px); } }
   #title .press { bottom: 150px; animation: blink 1.4s ease-in-out infinite; }
-  /* Staging playtest only: a labelled shortcut onto the ravine. Production has no such control. */
+  /* Staging playtest only: a labelled shortcut onto level 3. Production has no such control. */
   #playLevel3 {
     position: absolute; left: 50%; top: 28px; transform: translateX(-50%); z-index: 6;
     display: block; cursor: pointer; font: inherit; font-size: 42px; white-space: nowrap;
@@ -79,6 +79,7 @@
   #level3 { background: #1a0500; overflow: hidden; }
   #l3cam, #l3bg { position: absolute; inset: 0; }
   #l3bg { background: url('volcano_chase_bg_v3_lossless.png') center/cover no-repeat; transform: scale(1.03); will-change: transform; }
+  #level3 .road3 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 3; pointer-events: none; }   /* the painted rolling road and rock corridor (level3.js drawRoad3) */
   #l3lines { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.3; pointer-events: none; z-index: 30; }
   #scen3 { position: absolute; inset: 0; z-index: 5; pointer-events: none; }   /* receding roadside props and path dashes, under everything that comes at Zacky */
   #scen3 .sp { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; transform-origin: 0 0; }   /* no will-change: ~80 promoted layers cost more than repainting the few moving pictures when there is no GPU */
@@ -86,6 +87,7 @@
   #scen3 .sp.prop img { filter: brightness(0.82) saturate(0.9); }               /* plain and a little darker, no shadow, so it reads as left behind */
   #scen3 .sp.dash img { transform-origin: 50% 50%; opacity: 0.8; }
   #scen3 .sp.crack img { transform-origin: 50% 50%; }
+  #scen3 .sp.boulder .bsh { position: absolute; border-radius: 50%; background: radial-gradient(ellipse at 50% 50%, rgba(45,15,30,0.55) 0, rgba(45,15,30,0.3) 45%, rgba(45,15,30,0) 72%); }   /* the boulder's contact shadow, drawn in code */
   #ridge3 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }   /* two rocky ridge strips just under the horizon, either side of the volcano (inside #l3bg, so they shake with it) */
   #rav3 { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; } /* mid ravine walls + corridor; shakes with the volcano */
   #rav3 .rv { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; transform-origin: 0 0; }
@@ -102,13 +104,13 @@
   #launch3 { position: absolute; inset: 0; z-index: 8; pointer-events: none; }   /* rocks thrown out of the crater */
   #launch3 img { position: absolute; left: 0; top: 0; max-width: none; display: none; transform-origin: 50% 50%; filter: drop-shadow(0 0 14px #ff7a1a); will-change: transform; }
   #world3 { position: absolute; inset: 0; z-index: 10; }
-  #world3 .it { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; will-change: transform; }
-  #world3 .it.near { z-index: 25; }
-  #world3 .it.t-R img { filter: drop-shadow(0 0 16px #ff7a1a); }   /* lava rocks glow, scenery does not */
-  #world3 .it.t-g img { filter: drop-shadow(0 0 12px #ffe27a); }
-  #world3 .it .sh { position: absolute; left: 0; top: 0; border-radius: 50%; background: rgba(40,10,20,0.55); }
-  #world3 .it .dust { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(circle, rgba(170,115,80,0.7), rgba(170,115,80,0) 70%); }
-  #world3 .it img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 50% 100%; }
+  #level3 .it { position: absolute; left: 0; top: 0; width: 0; height: 0; display: none; will-change: transform; }
+  #level3 .it.near { z-index: 25; }
+  #level3 .it.t-R img { filter: drop-shadow(0 0 16px #ff7a1a); }   /* lava rocks glow, scenery does not */
+  #level3 .it.t-g img { filter: drop-shadow(0 0 12px #ffe27a); }
+  #level3 .it .sh { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(ellipse at 50% 50%, rgba(40,10,20,0.75) 0, rgba(40,10,20,0.45) 45%, rgba(40,10,20,0) 72%); }   /* soft contact shadow, pinned to the ground point under the base */
+  #level3 .it .dust { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(circle, rgba(170,115,80,0.7), rgba(170,115,80,0) 70%); }
+  #level3 .it img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 50% 100%; }
   #smoke3 { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; }
   #smoke3 img { position: absolute; left: 0; top: 0; max-width: none; width: 300px; height: 231px; opacity: 0; will-change: transform; }
   #spurt3 { position: absolute; left: 846px; top: -119px; width: 240px; height: 400px; transform-origin: 50% 100%; opacity: 0; pointer-events: none; }   /* bottom-centre on the crater (966,281) */
@@ -144,7 +146,7 @@
   #hint3 { position: absolute; left: 40px; top: 130px; z-index: 40; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 8px 28px; font-size: 46px; text-shadow: 2px 2px 0 #000; white-space: nowrap; pointer-events: none; }
   #hint3.on { opacity: 1; }
   #hint3 .keycap { min-width: 60px; height: 60px; line-height: 54px; padding: 0 12px; font-size: 38px; margin: 0 4px; }
-  #world3 .it.t-D img { filter: drop-shadow(0 0 16px #ffd34d); }
+  #level3 .it.t-D img { filter: drop-shadow(0 0 16px #ffd34d); }
   #z3.boost img { filter: drop-shadow(0 0 22px #ffd34d); }
   #spk3 { position: absolute; inset: 0; z-index: 26; pointer-events: none; }
   #spk3 .spk3 { position: absolute; width: 80px; height: 80px; opacity: 0; animation: spk3 0.9s ease-out forwards; }
@@ -235,6 +237,7 @@
   <!-- ════════════════════ LEVEL 3 (lava chase) ════════════════════ -->
   <div id="level3" class="screen">
     <div id="l3cam"><div id="l3bg"><div id="ridge3"></div><div id="rav3"></div><img id="glow3" src="volcano_glow_v2.png" alt=""><div id="smoke3"></div><img id="spurt3" src="lava_spurt.png" alt=""></div></div>
+    <canvas id="road3base" class="road3" width="1920" height="1080"></canvas><canvas id="road3walls" class="road3" width="960" height="540"></canvas><canvas id="road3" class="road3" width="1920" height="1080"></canvas><canvas id="road3fog" class="road3" width="1920" height="1080"></canvas>
     <img id="l3lines" src="speed_lines.png" alt="">
     <div id="ravNear3"></div>
     <div id="scen3"></div>
@@ -322,7 +325,37 @@ const L3_DEFAULTS = {
   moteCount: 10,               // sparse ash motes (0 to 14; under 3 flashes/sec)
   ravineOn: 1,                 // 1 = lava ravine walls and lips; 0 = old prop-only sides
   groundFill: 0,               // 0 once ravine walls are on (props stay as light garnish); 1 = old dense plain fill
-  edgeClearPx: 100,            // clear margin from the sand edge on the new narrower ravine path (100 to 150)
+  edgeClearPx: 100,            // clear margin from the sand edge (100 to 150)
+  /* ── level 3 rolling road (road plan, Nov 9): one painted road under one projection ── */
+  ridgeArt: 'assets/l3-road/far_ridge_3840.png',   // Ali's far ridge ('' = none): a 1920 px window of the 3840 strip (no repeat, not mirrored), shown only where the plate is sky
+  ridgeTopY: 200,              // stage y of the top of the ridge picture; its hills top out at about y 303-331 and its foot is at y 400, behind the brow
+  ridgeH: 200,                 // the strip's 512 rows squashed into this many stage px (as in Ali's mock)
+  ridgeX0: 960,                // where the 1920 px window starts in the 3840 strip
+  boulderOn: 1,                // the corridor walls as one dense row of boulders per side, in the shared far-to-near order with props and rocks
+  boulderGapU: 0.03,           // road depth (u) between one boulder and the next on a side (they overlap)
+  boulderH: 380,               // ground px tall for a 500 px tall sprite (Ali: near clusters about 220-320 px on screen at Zacky's row); each one 0.85x-1.2x, fixed per boulder
+  boulderFootPx: 40,           // the first boulder's inner foot sits this far outside the sand edge (on the lip, never on the sand)
+  boulderArt: ['assets/l3-road/boulders/boulder_01.png', 'assets/l3-road/boulders/boulder_02.png', 'assets/l3-road/boulders/boulder_03.png', 'assets/l3-road/boulders/boulder_04.png', 'assets/l3-road/boulders/boulder_05.png', 'assets/l3-road/boulders/boulder_06.png', 'assets/l3-road/boulders/boulder_07.png', 'assets/l3-road/boulders/boulder_08.png'],              // Ali's boulder sprites (assets/l3-road/boulders/*.png, listed by dev/scan_boulders.py); empty = plain dark-plum placeholders
+  roadOn: 1,                   // 1 = the painted rolling road and rock corridor; 0 = the old baked plate path
+  roadHalfWidth: 1366,         // sand half-width in ground px (live was 1355 left / 1366 right; never below that)
+  laneFraction: 0.3807,        // the outer lane centre as a fraction of roadHalfWidth (0.3807 x 1366 = 520 ground px, the live lane spacing)
+  hillAmp: 12,                 // the crest: the far road rolls up to a brow this many px under the volcano's vanishing point (0 = no crest; Zacky's row never moves)
+  crestLength: 0.25,           // how far down the road the crest reaches (perspective scale; Zacky's feet are at 0.89, so they stay put)
+  fogDensity: 0.8,             // haze over the far road at the brow (0 to 1); it thins out down to crestLength
+  segmentLength: 0.15,         // one road segment, in seconds of running (the subtle sand bands and the edge stripes move one segment at a time)
+  rumbleLength: 2,             // segments per edge-stripe colour
+  dashPeriod: 0.3,             // a lane dash every this many seconds of running, each dashFill of it long
+  dashFill: 0.4,
+  wallOn: 1,                   // 1 = the Crash-style rock corridor either side of the road (placeholder boulders drawn in code until Ali's slices land)
+  wallShelf: 500,              // ground px of ash shelf between the sand edge and the rock walls (the roadside props stand on it)
+  wallLen: 0.12,               // one rock of the inner wall every this many seconds of running (the outer wall uses 1.7x)
+  wallArtLeft: '',             // Ali's corridor slices: set to the file names (e.g. 'corridor_slice_left.png') and the code-drawn boulders are replaced by them
+  wallArtRight: '',
+  sandArt: 'assets/l3-road/sand_strip.png',   // Ali's sand texture strip (512x512, seamless): its grain is laid over the light painted sand ('' = plain painted sand)
+  sandArtGain: 2.5,            // how strong the grain is (x the strip's own light/dark variation; the strip itself is very even)
+  sandArtLenU: 0.25,           // one strip height covers this much road depth (u)
+  contactShadowOpac: 0.45,     // the soft oval shadow under each rock, gem and donut at full size (0 to 0.6)
+  gemBounceAmp: 0.25,          // gem and donut hop height as a fraction of the old bounce (1 = the old high bounce; their base stays on the path at 0)
   crackGapS: 0.7,              // a lava crack or pebble patch on the ground every this many seconds of running
   rockLaunchMs: 800,           // a lava rock arcs out of the volcano this many ms before it appears on the path
   shakePx: 8,                  // how far the background shakes on a big launch (6 to 10; 0 turns the shake off; Zacky and the HUD never shake)
@@ -355,7 +388,7 @@ window.STAGE_SCALE = 1;
 ['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchend', 'touchmove']
   .forEach(function (evtName) {
     document.addEventListener(evtName, function (e) {
-      if (e.target && e.target.closest && e.target.closest('#playLevel3')) return;   // the staging "Play level 3" control is the one pointer target
+      if (e.target && e.target.closest && e.target.closest('#playLevel3')) return;
       e.preventDefault(); e.stopPropagation();
     }, { capture: true, passive: false });
   });
@@ -368,7 +401,7 @@ document.addEventListener('keydown', function (e) {
   if (stage === 'title') {
     // title screen: ANY key starts the game (letters, numbers, Shift, Tab...), except F1-F12 and Esc
     if (/^F\d+$/.test(e.key) || e.key === 'Escape') return;       // F1-F12 stay browser keys, and Esc stays free to leave fullscreen: neither starts the game
-    if (e.key === '3') {                                          // staging shortcut: one tap opens the ravine, instead of level 1
+    if (e.key === '3') {                                          // staging shortcut: one tap opens level 3, instead of level 1
       e.preventDefault();
       if (e.repeat || screenLocked) return;
       unlockAudio();
@@ -428,7 +461,7 @@ preload(PRELOAD).then(function () {
   document.getElementById('loading').classList.remove('active');
   document.getElementById('loading').style.display = 'none';
   window.gameReady = true;
-  if (new URLSearchParams(location.search).get('level') === '3') startLevel3();   // staging URL .../game3/?level=3 opens the ravine ready screen
+  if (new URLSearchParams(location.search).get('level') === '3') startLevel3();
   else showScreen('title', function () { playMusic(titleMusic); });
 });
 
