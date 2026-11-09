@@ -138,8 +138,17 @@ function scen3Spec(st) {                    // everything about a stream's timin
 /* Ali's far ridge (FIX4): a 1920 px window of far_ridge_3840.png at the horizon, laid into the plate itself only where the plate is sky (bright warm
    pixels), so the cone, its glow and the spires all stay in front of it. It is composed once into a copy of the plate that becomes #l3bg's background:
    the same element, size and scaling as before, so every plate pixel that is not sky is exactly as it was. */
+function l3Plate() { return L3_CFG.roadOn && L3_CFG.plateArt ? L3_CFG.plateArt : 'volcano_chase_bg_v3_lossless.png'; }   // TIDY1: Ali's final low-ridge plate on the road (the ravine build keeps the old one)
 function farRidge3() {
-  var bg = document.getElementById('l3bg'); if (!bg || !L3_CFG.ridgeArt || !L3_CFG.roadOn) return;
+  var bg = document.getElementById('l3bg'); if (!bg || !L3_CFG.roadOn) return;
+  if (L3_CFG.plateArt) {                 // TIDY1: Ali's plate has its own low ridges and a clean volcano, so the code's own paint over it goes:
+    document.getElementById('ridge3').style.display = 'none';            // the old faint spiky ridge strips (a pale band right across the horizon, y 254-345)
+    if (!L3_CFG.plateGlow) glow3.style.display = 'none';                  // and the screen-blended glow, a warm wash over the whole cone (the crater still glows in the plate)
+  }
+  if (!L3_CFG.ridgeArt) {                // no far ridge: just the plate; swapped in once it has loaded, so the old one never gives way to a blank
+    if (l3Plate() === 'volcano_chase_bg_v3_lossless.png') return;
+    var pl = new Image(); pl.onload = function () { bg.style.backgroundImage = 'url("' + l3Plate() + '")'; }; pl.src = l3Plate(); return;
+  }
   var rid = new Image(), plate = new Image(), n = 0;
   function go() {
     if (++n < 2) return;
@@ -156,7 +165,7 @@ function farRidge3() {
     rx.putImageData(id, 0, 0); x.drawImage(r, 0, y0);
     c.toBlob(function (blob) { if (blob) bg.style.backgroundImage = 'url(' + URL.createObjectURL(blob) + ')'; }, 'image/png');
   }
-  rid.onload = plate.onload = go; rid.src = L3_CFG.ridgeArt; plate.src = 'volcano_chase_bg_v3_lossless.png';
+  rid.onload = plate.onload = go; rid.src = L3_CFG.ridgeArt; plate.src = l3Plate();
 }
 function buildScenery3() {
   if (!buildScenery3.ridge) { buildScenery3.ridge = 1; farRidge3(); }
@@ -228,16 +237,36 @@ function boulder3Placeholders() {
   }
   return out;
 }
+/* TIDY2: Ali's 06 and 07 are paler and bluer than the rest of the kit (07 about 20% lighter, 06 a lot bluer), so next to the others they read as
+   see-through lilac. Each sprite's mean colour (opaque pixels) is measured once at load; any that is more than 6% off the kit's own colour
+   (the mean of 01-05; 05 is about 9% darker than that) in a channel is recoloured once with a per-channel gain to match, alpha untouched (fully opaque stays fully opaque). */
+function boulder3Tone(im) {
+  var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+  var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
+  var px = g.getImageData(0, 0, c.width, c.height), d = px.data, m = [0, 0, 0], n = 0, i;
+  for (i = 0; i < d.length; i += 4) if (d[i + 3] > 250) { m[0] += d[i]; m[1] += d[i + 1]; m[2] += d[i + 2]; n++; }
+  return { c: c, g: g, px: px, mean: m.map(function (v) { return v / Math.max(1, n); }) };
+}
+function boulder3Match(t, target) {
+  var gain = t.mean.map(function (v, k) { return target[k] / Math.max(1, v); });
+  if (gain.every(function (k) { return Math.abs(k - 1) <= 0.06; })) return null;
+  var d = t.px.data; for (var i = 0; i < d.length; i += 4) { d[i] = Math.min(255, d[i] * gain[0]); d[i + 1] = Math.min(255, d[i + 1] * gain[1]); d[i + 2] = Math.min(255, d[i + 2] * gain[2]); }
+  t.g.putImageData(t.px, 0, 0); return t.c.toDataURL('image/png');
+}
 function boulder3Defs() {
   if (!boulder3Defs.list) {
     boulder3Defs.list = boulder3Placeholders(); boulder3Defs.art = false;
-    var files = L3_CFG.boulderArt || [], got = [], left = files.length;
-    var done = function () {             // all of Ali's set is in: swap it in for the placeholders, including the boulders already on the road
-      if (--left > 0) return; var list = got.filter(Boolean); if (!list.length) return;
+    var files = L3_CFG.boulderArt || [], got = [], tones = [], left = files.length;
+    var done = function () {             // all of Ali's set is in: tone-match it, then swap it in for the placeholders, including the boulders already on the road
+      if (--left > 0) return;
+      var ref = tones.slice(0, 5).filter(Boolean), target = [0, 1, 2].map(function (k) { return ref.reduce(function (a, t) { return a + t.mean[k]; }, 0) / Math.max(1, ref.length); });
+      boulder3Defs.toned = [];
+      got.forEach(function (d, i) { if (!d || !tones[i]) return; var url = boulder3Match(tones[i], target); if (url) { d.file = d.src; d.src = url; boulder3Defs.toned.push(d.file.split('/').pop()); } });
+      var list = got.filter(Boolean); if (!list.length) return;
       boulder3Defs.list = list; boulder3Defs.art = true;
       (scen3.boulders || []).forEach(function (st) { st.els.forEach(function (o) { o.k = null; }); });
     };
-    files.forEach(function (f, i) { var im = new Image(); im.onload = function () { got[i] = { src: f, w: im.naturalWidth, h: im.naturalHeight, sc: 1, haze: true, ref: 500 }; done(); };   /* Ali's set comes in sizes (big, middle, small): kept, against a 500 px reference */
+    files.forEach(function (f, i) { var im = new Image(); im.onload = function () { got[i] = { src: f, w: im.naturalWidth, h: im.naturalHeight, sc: 1, haze: true, ref: 500 }; try { tones[i] = boulder3Tone(im); } catch (e) { tones[i] = null; } done(); };   /* Ali's set comes in sizes (big, middle, small): kept, against a 500 px reference */
       im.onerror = done; im.src = f; });
   }
   return boulder3Defs.list;
@@ -264,16 +293,16 @@ function drawBoulders3() {
   if (!scen3.boulders || !scen3.boulders.length) return;
   var defs = boulder3Defs(), gapG = L3_CFG.boulderGapU * L3_TRAVEL / L3_CFG.sceneryFactor, life = scen3Life(), H = L3_CFG.roadHalfWidth, sBrow = L3_ROAD_TOP * 1.15;
   scen3.boulders.forEach(function (st) {
-    var sd = st.side, n = st.els.length, k0 = Math.ceil((state3.scen - life) / gapG) - 1, k1 = Math.floor(state3.scen / gapG), k, j;
+    var sd = st.side, seed = sd > 0 ? L3_CFG.boulderSeedRight : L3_CFG.boulderSeedLeft, n = st.els.length, off = sd > 0 ? L3_CFG.boulderSideOffset * gapG : 0, k0 = Math.ceil((state3.scen - off - life) / gapG) - 1, k1 = Math.floor((state3.scen - off) / gapG), k, j;   // TIDY3: the right row runs a part of a step behind the left one, so the two kerbs do not line up
     st.els.forEach(function (o) { o.stamp = -1; });
     for (k = k0; k <= k1; k++) {
-      var cnt = 3 + (scen3H(k, sd, 53) < 0.5 ? 1 : 0), x = H + L3_CFG.boulderFootPx;   // x: where the next boulder's inner foot goes (ground px from the middle)
+      var cnt = 3 + (scen3H(k, seed, 53) < 0.5 ? 1 : 0), x = H + L3_CFG.boulderFootPx;   // x: where the next boulder's inner foot goes (ground px from the middle)
       for (j = 0; j < cnt; j++) {
-        var def = boulder3Pick(k, sd, j, defs), h1 = scen3H(k * 4 + j, sd, 61), size = L3_CFG.boulderH / (def.ref || def.h) * (0.85 + 0.35 * h1);
-        var wd = def.w * size, ground = sd * (x + wd / 2), spawn = k * gapG + j * gapG * 0.37, o = st.els[scen3Mod(k * 4 + j, n)];
-        x += wd * (0.35 + 0.2 * scen3H(k * 4 + j, sd, 73));     // next one: 35-55% of this one's width further out, so they overlap
+        var def = boulder3Pick(k, seed, j, defs), h1 = scen3H(k * 4 + j, seed, 61), size = L3_CFG.boulderH / (def.ref || def.h) * (0.85 + 0.35 * h1);
+        var wd = def.w * size, ground = sd * (x + wd / 2), spawn = off + k * gapG + j * gapG * 0.37, o = st.els[scen3Mod(k * 4 + j, n)];
+        x += wd * (0.35 + 0.2 * scen3H(k * 4 + j, seed, 73));     // next one: 35-55% of this one's width further out, so they overlap
         o.stamp = 1;
-        if (scen3Place(o, (k * 4 + j) * 2 + (sd > 0 ? 1 : 0), spawn, ground, def, scen3H(k * 4 + j, sd, 71) < 0.5, true, size, 1)) {
+        if (scen3Place(o, (k * 4 + j) * 2 + (sd > 0 ? 1 : 0), spawn, ground, def, scen3H(k * 4 + j, seed, 71) < 0.5, true, size, 1)) {
           if (o.s < sBrow) o.img.style.opacity = '0';               // nothing of a boulder over the volcano: they only come up once they are in front of the brow
           else if (o.s < sBrow * 2.5) o.img.style.opacity = (Math.min(+(o.img.style.opacity || 1), (o.s - sBrow) / (sBrow * 1.5))).toFixed(2);
           if (o.shDef !== def) { o.shDef = def; var sw = def.w * 0.92; o.sh.style.width = sw + 'px'; o.sh.style.height = (sw * 0.16) + 'px'; o.sh.style.left = (-sw / 2) + 'px'; o.sh.style.top = (-sw * 0.08) + 'px'; }
@@ -1063,7 +1092,8 @@ function level3Frame(dt) {
   var ev = drawEruption3(dt) || 0;
   l3bg.style.transform = 'translate(' + state3.shakeX.toFixed(1) + 'px,' + (bob + state3.shakeY).toFixed(1) + 'px) scale(1.03)';
   xfTick(chaseXF); xfTick(rumbleXF); xfTick(rollXF);
-  l3lines.style.opacity = (state3.phase === 'run' ? (l3Calm ? 0.25 : 0.2 + 0.12 * Math.abs(Math.sin(state3.clock * 5))) : 0.15) + 0.4 * (state3.boostK - 1) / Math.max(0.01, L3_CFG.boostSpeed - 1);   // stronger speed lines in the boost
+  l3lines.style.opacity = L3_CFG.roadOn ? (0.4 * Math.max(0, state3.boostK - 1) / Math.max(0.01, L3_CFG.boostSpeed - 1)).toFixed(3) :   // TIDY2: on the road the speed lines (speed_lines.png) only show in the boost: at rest they were faint white streaks over the sky and ridge
+   (state3.phase === 'run' ? (l3Calm ? 0.25 : 0.2 + 0.12 * Math.abs(Math.sin(state3.clock * 5))) : 0.15) + 0.4 * (state3.boostK - 1) / Math.max(0.01, L3_CFG.boostSpeed - 1);   // stronger speed lines in the boost
   glow3.style.opacity = (l3Calm ? 0.55 : Math.min(1, 0.45 + 0.35 * Math.sin(state3.glowT * Math.PI * 2000 / L3_CFG.glowPulseMs) + 0.2 * ev)).toFixed(2);   // a slow pulse (about one every 2.2s), a little brighter in an eruption
   var wob = l3Calm ? 0 : Math.sin(state3.clock * 3) * 8;
   wave3.style.transform = 'translateY(' + (-state3.lava * L3_WAVE_MAX + (state3.lava > 0 ? wob : 0)).toFixed(1) + 'px)';

@@ -327,7 +327,9 @@ const L3_DEFAULTS = {
   groundFill: 0,               // 0 once ravine walls are on (props stay as light garnish); 1 = old dense plain fill
   edgeClearPx: 100,            // clear margin from the sand edge (100 to 150)
   /* ── level 3 rolling road (road plan, Nov 9): one painted road under one projection ── */
-  ridgeArt: 'assets/l3-road/far_ridge_3840.png',   // Ali's far ridge ('' = none): a 1920 px window of the 3840 strip (no repeat, not mirrored), shown only where the plate is sky
+  plateArt: 'assets/l3-road/plate_l3_lowridge.png',   // TIDY1: Ali's final background plate for the road (low, broad ridges, clean volcano; the volcano pixels are the old plate's exactly); '' = the old spiky plate
+  plateGlow: 0,                // TIDY1: 1 = keep the old pulsing glow wash over the volcano on Ali's plate (it fogs the cone)
+  ridgeArt: '',                // TIDY1: off. Ali's far ridge ('assets/l3-road/far_ridge_3840.png' turns it back on): composed into the plate's sky it made the flat mauve band behind the cone and left a cream rim of sky fringe round the cone and spires (Daniel's road-09); it would also sit above y 420 on Ali's low-ridge plate
   ridgeTopY: 200,              // stage y of the top of the ridge picture; its hills top out at about y 303-331 and its foot is at y 400, behind the brow
   ridgeH: 200,                 // the strip's 512 rows squashed into this many stage px (as in Ali's mock)
   ridgeX0: 960,                // where the 1920 px window starts in the 3840 strip
@@ -335,6 +337,9 @@ const L3_DEFAULTS = {
   boulderGapU: 0.03,           // road depth (u) between one boulder and the next on a side (they overlap)
   boulderH: 380,               // ground px tall for a 500 px tall sprite (Ali: near clusters about 220-320 px on screen at Zacky's row); each one 0.85x-1.2x, fixed per boulder
   boulderFootPx: 40,           // the first boulder's inner foot sits this far outside the sand edge (on the lip, never on the sand)
+  boulderSeedLeft: 11,         // TIDY3: each kerb has its own seed for the boulder picks, sizes and flips (Ali's 01-02 cluster piles are the 'tufts')
+  boulderSeedRight: 7,
+  boulderSideOffset: 0.5,      // and the right kerb runs this part of a step behind the left one, so the rows do not line up across the road
   boulderArt: ['assets/l3-road/boulders/boulder_01.png', 'assets/l3-road/boulders/boulder_02.png', 'assets/l3-road/boulders/boulder_03.png', 'assets/l3-road/boulders/boulder_04.png', 'assets/l3-road/boulders/boulder_05.png', 'assets/l3-road/boulders/boulder_06.png', 'assets/l3-road/boulders/boulder_07.png', 'assets/l3-road/boulders/boulder_08.png'],              // Ali's boulder sprites (assets/l3-road/boulders/*.png, listed by dev/scan_boulders.py); empty = plain dark-plum placeholders
   roadOn: 1,                   // 1 = the painted rolling road and rock corridor; 0 = the old baked plate path
   roadHalfWidth: 1366,         // sand half-width in ground px (live was 1355 left / 1366 right; never below that)
@@ -1077,6 +1082,19 @@ function frame(t) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+/* TIDY5: frame-rate overlay for playtests, only with ?fps=1 in the address. Without the flag this block makes no element, no timer and no
+   frame callback: the test below the regex is the only work done. With it: a small box at the top right with the frames per second and the
+   slowest frame of the last second, from its own requestAnimationFrame. */
+if (/[?&]fps=1(&|$)/.test(location.search)) (function () {
+  var el = document.createElement('div'); el.id = 'fps'; el.setAttribute('aria-hidden', 'true');
+  el.style.cssText = 'position:fixed;right:8px;top:8px;z-index:9999;font:bold 16px/1.2 monospace;color:#fff;background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:6px;pointer-events:none';
+  document.body.appendChild(el);
+  var n = 0, t0 = 0, last = 0, worst = 0;
+  function tick(t) { if (!t0) t0 = t; if (last) worst = Math.max(worst, t - last); last = t; n++;
+    if (t - t0 >= 1000) { el.textContent = Math.round(n * 1000 / (t - t0)) + ' fps · worst ' + Math.round(worst) + ' ms'; n = 0; t0 = t; worst = 0; }
+    requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+})();
 </script>
 <script src="level3.js"></script>
 </body>
