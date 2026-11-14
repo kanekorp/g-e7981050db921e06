@@ -46,14 +46,6 @@
   #titleCar { position: absolute; left: 0; top: 437px; width: 400px; height: 379px; z-index: 1; display: none; pointer-events: none; animation: carDrive 11s linear infinite; }
   @keyframes carDrive { from { transform: translateX(-460px); } to { transform: translateX(1980px); } }
   #title .press { bottom: 150px; animation: blink 1.4s ease-in-out infinite; }
-  /* Staging playtest only: a labelled shortcut onto level 3. Production has no such control. */
-  #playLevel3 {
-    position: absolute; left: 50%; top: 28px; transform: translateX(-50%); z-index: 6;
-    display: block; cursor: pointer; font: inherit; font-size: 42px; white-space: nowrap;
-    background: rgba(0,0,0,0.72); color: #fff; border: 5px solid #7dffb3; border-radius: 40px;
-    padding: 10px 36px; text-shadow: 2px 2px 0 #000;
-  }
-  #playLevel3 span { display: block; margin-top: 4px; font-size: 24px; color: #ffd84d; text-shadow: 1px 1px 0 #000; }
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
   /* ─── LEVEL 1 ─── */
@@ -75,6 +67,43 @@
   @keyframes celTwinkle { 0%,100% { opacity: 0; transform: scale(.3) rotate(0deg); } 50% { opacity: .95; transform: scale(1) rotate(45deg); } }
   @media (prefers-reduced-motion: reduce) { #celebrate .cel-bg { animation: none; } #celebrate .spark { animation: none; opacity: .7; transform: none; } }
   #celebrate .press { bottom: 60px; animation: blink 1.4s ease-in-out infinite; }
+  #boss { background: #1a0500 url('assets/level-boss/boss_arena_bg.jpg') center/cover no-repeat; }
+  #worldB { position: absolute; inset: 0; pointer-events: none; }
+  #worldB img { pointer-events: none; }
+  #hintB { position: absolute; z-index: 30; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  #hintB.on { opacity: 1; }
+  #hintB .keycap { animation: keypress 0.9s ease-in-out infinite; }
+  #hintB .keycap.space-pic { min-width: 220px; height: 100px; line-height: 100px; padding: 0; position: relative; }
+  #hintB .keycap.space-pic .drop { display: block; position: absolute; left: 50%; top: 50%; width: 28px; height: 40px; margin: -22px 0 0 -14px; background: #5ec8ff; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; box-shadow: inset -6px -4px 0 #2a8ec8; }
+  @media (prefers-reduced-motion: reduce) { #hintB .keycap { animation: none; } }
+  .puddleB { position: absolute; z-index: 2; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 35%, rgba(190,245,255,0.8), rgba(50,170,190,0.72) 50%, rgba(20,100,120,0.55));
+    box-shadow: inset 0 -3px 6px rgba(0,40,50,0.3), 0 0 12px rgba(80,210,230,0.35); }
+  .puddleB.drip { opacity: 0.85; }
+  #barB { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); width: 640px; height: 120px; z-index: 40; display: none; align-items: center; justify-content: center; gap: 16px; box-sizing: border-box; padding: 8px 20px; background: rgba(0,0,0,0.5); border: 5px solid #ffd84d; border-radius: 28px; pointer-events: none; }
+  #barB.on { display: flex; }
+  #barB img { width: 100px; height: 100px; flex: 0 0 100px; }
+  #barB img.out { filter: grayscale(1) brightness(0.45); opacity: 0.3; }
+  .steamB, .dropB { position: absolute; z-index: 26; pointer-events: none; }
+  .steamB { width: 160px; animation: steamB 0.8s ease-out forwards; }
+  @keyframes steamB { 0% { opacity: 0.9; transform: translate(-80px,-40px) scale(0.5); } 100% { opacity: 0; transform: translate(-80px,-160px) scale(1.2); } }
+  .dropB { width: 36px; animation: dropB 0.7s ease-in forwards; }
+  @keyframes dropB { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(90px) scale(0.7); } }
+  @media (prefers-reduced-motion: reduce) { .steamB, .dropB { animation: none; opacity: 0.8; } }
+  .rockB { position: absolute; z-index: 8; pointer-events: none; }
+  .rockB.pebbleB { z-index: 4; filter: grayscale(1) brightness(0.85); }
+  .shadowB { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255,160,40,0.85) 0%, rgba(255,60,0,0.4) 55%, transparent 72%);
+    transform: translate(-50%, -40%); animation: shadowBpulse 0.45s ease-in-out infinite alternate; }
+  @keyframes shadowBpulse { from { opacity: 0.7; filter: blur(1px); } to { opacity: 1; filter: blur(2px); } }
+  @media (prefers-reduced-motion: reduce) { .shadowB { animation: none; opacity: 0.9; } }
+  #glowB { position: absolute; left: 960px; top: 280px; width: 640px; height: 400px; margin: -200px 0 0 -320px; z-index: 3; pointer-events: none; display: none; opacity: 0; mix-blend-mode: screen; }
+  #uhOhB { position: absolute; z-index: 28; pointer-events: none; display: none; width: 340px; padding: 18px 28px 22px; box-sizing: border-box;
+    background: #fff7e6; border: 6px solid #6a3a12; border-radius: 28px; color: #5a1500; font-size: 64px; font-weight: 800; text-align: center; line-height: 1.1;
+    text-shadow: none; box-shadow: 6px 8px 0 rgba(0,0,0,0.18); }
+  #uhOhB:after { content: ''; position: absolute; left: 70%; bottom: -22px; width: 28px; height: 28px; background: #fff7e6; border-right: 6px solid #6a3a12; border-bottom: 6px solid #6a3a12; transform: rotate(45deg); }
+  #uhOhB.on { display: block; }
+  #whiteB { position: absolute; inset: 0; background: #fff; z-index: 80; pointer-events: none; opacity: 0; }
   /* ─── LEVEL 3 (lava chase) ─── */
   #level3 { background: #1a0500; overflow: hidden; }
   #l3cam, #l3bg { position: absolute; inset: 0; }
@@ -122,13 +151,41 @@
   #celebrate3 .c3-confetti { position: absolute; left: 0; top: -1080px; width: 1920px; height: 2160px; background: url('confetti.png') 0 0/1920px 1080px repeat-y; animation: c3fall 7s linear infinite; pointer-events: none; }
   @keyframes c3fall { from { transform: translateY(0); } to { transform: translateY(1080px); } }
   @media (prefers-reduced-motion: reduce) { #celebrate3 .c3-confetti { animation: none; top: 0; } }
-  #celebrate3 h1 { position: absolute; left: 0; right: 0; top: 190px; font-size: 140px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; }
-  #count3 { position: absolute; left: 0; right: 0; top: 390px; font-size: 76px; color: #fff; text-shadow: 4px 4px 0 #5a1500; }
-  #gemRow3 { position: absolute; left: 0; right: 0; top: 520px; display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; padding: 0 160px; }
+  #celebrate3 h1 { position: absolute; left: 0; right: 0; top: 150px; font-size: 140px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; }
+  #starRow3 { position: absolute; left: 0; right: 0; top: 320px; display: flex; justify-content: center; gap: 48px; z-index: 5; pointer-events: none; }
+  #starRow3 .starWrap3 { position: relative; width: 108px; height: 108px; }
+  #starRow3 .star3 { display: block; width: 100%; height: 100%; background: radial-gradient(circle at 40% 35%, #fff6a0, #ffd84d 45%, #e6a000 100%);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 0 16px #ffb000) drop-shadow(3px 3px 0 #7a2200);
+    opacity: 0; transform: scale(0.2); }
+  #celebrate3.active #starRow3 .star3 { animation: starpop 0.5s ease-out forwards; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(1) .star3 { animation-delay: 0.05s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(2) .star3 { animation-delay: 0.3s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(3) .star3 { animation-delay: 0.55s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(4) .star3 { animation-delay: 0.8s; }
+  @keyframes starpop { 0% { opacity: 0; transform: scale(0.2) rotate(-12deg); } 70% { opacity: 1; transform: scale(1.2) rotate(8deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+  #starRow3 .sparkle3 { position: absolute; left: 58px; top: -22px; width: 56px; height: 56px; pointer-events: none; opacity: 0; }
+  #celebrate3.active #starRow3 .sparkle3 { animation: sparkburst 0.7s ease-out forwards; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(1) .sparkle3 { animation-delay: 0.2s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(2) .sparkle3 { animation-delay: 0.45s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(3) .sparkle3 { animation-delay: 0.7s; }
+  #celebrate3.active #starRow3 .starWrap3:nth-child(4) .sparkle3 { animation-delay: 0.95s; }
+  @keyframes sparkburst { 0% { opacity: 0; transform: scale(0.2) rotate(0deg); } 40% { opacity: 1; transform: scale(1.3) rotate(25deg); } 100% { opacity: 0; transform: scale(1.6) rotate(50deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    #celebrate3.active #starRow3 .star3 { animation: none; opacity: 1; transform: none; }
+    #celebrate3.active #starRow3 .sparkle3 { animation: none; opacity: 0.85; transform: none; }
+  }
+  #count3 { position: absolute; left: 0; right: 0; top: 450px; font-size: 76px; color: #fff; text-shadow: 4px 4px 0 #5a1500; }
+  #gemRow3 { position: absolute; left: 0; right: 0; top: 580px; display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; padding: 0 160px; }
   #gemRow3 img { width: 84px; height: 99px; filter: drop-shadow(0 0 18px #ff6a00) drop-shadow(3px 3px 0 #000); opacity: 0; transform: scale(0.2); }
   #gemRow3 img.miss { filter: grayscale(1) brightness(0.45) drop-shadow(3px 3px 0 #000); }
   #celebrate3.active #gemRow3 img { animation: gempop 0.45s ease-out forwards; }
-  #celebrate3 .press { bottom: 120px; animation: blink 1.4s ease-in-out infinite; }
+  #finaleKey { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  #finaleKey.on { opacity: 1; }
+  #finaleKey .keycap { animation: keypress 0.9s ease-in-out infinite; }
+  #finaleKey .keycap.space-pic { min-width: 220px; height: 100px; line-height: 100px; padding: 0; position: relative; }
+  #finaleKey .keycap.space-pic .drop { display: block; position: absolute; left: 50%; top: 50%; width: 28px; height: 40px; margin: -22px 0 0 -14px; background: #5ec8ff; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; box-shadow: inset -6px -4px 0 #2a8ec8; }
+  @media (prefers-reduced-motion: reduce) { #finaleKey .keycap { animation: none; } }
   #wave3 { position: absolute; left: 0; top: 1080px; width: 1920px; height: 500px; z-index: 28; pointer-events: none; will-change: transform; }
   #flash3 { position: absolute; inset: 0; background: #ffa24d; opacity: 0; z-index: 60; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { #flash3 { display: none; } }          /* no flash at all for calm mode */
@@ -139,9 +196,18 @@
   #z3 .shadow { position: absolute; left: -60px; top: -14px; width: 120px; height: 28px; border-radius: 50%; background: rgba(60,20,40,0.35); }
   #level3 .press { bottom: 120px; animation: blink 1.4s ease-in-out infinite; z-index: 50; }
   #ready3 .press { bottom: 340px; }    /* sits on the road above Zacky's head, not over it */
+  #ready3 .ready-key { position: absolute; left: 50%; bottom: 470px; transform: translateX(-50%); z-index: 50; pointer-events: none; }
+  #ready3 .keycap { animation: keypress 0.9s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { #ready3 .keycap { animation: none; } }
+  #level3 .splash3 { position: absolute; left: 0; top: 0; z-index: 18; pointer-events: none; transform-origin: 50% 80%; }
   #ready3 h1 { position: absolute; left: 0; right: 0; top: 90px; text-align: center; font-size: 120px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; z-index: 50; }
   #hud, #hud2, #hud3 { position: absolute; left: 40px; top: 30px; z-index: 30; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.55); border: 4px solid #ffd84d; border-radius: 40px; padding: 10px 26px; color: #fff; font-size: 48px; text-shadow: 2px 2px 0 #000; }
   #hint, #hint2 { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 30; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 12px 40px; font-size: 48px; text-shadow: 2px 2px 0 #000; white-space: nowrap; }
+  #walkHint { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); z-index: 31; pointer-events: none; opacity: 0; transition: opacity 0.3s; display: flex; align-items: center; gap: 18px; }
+  #walkHint.on { opacity: 1; }
+  #walkHint .keycap { animation: keypress 0.9s ease-in-out infinite; font-size: 52px; min-width: 100px; height: 100px; line-height: 92px; }
+  #walkHint .walk-right { min-width: 120px; height: 120px; line-height: 112px; font-size: 64px; }  /* the Right key is the one that moves Zacky, drawn a little larger */
+  @media (prefers-reduced-motion: reduce) { #walkHint .keycap { animation: none; } }
   #hint.on, #hint2.on { opacity: 1; }
   #hint3 { position: absolute; left: 40px; top: 130px; z-index: 40; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.65); color: #fff; border: 5px solid #ffd84d; border-radius: 40px; padding: 8px 28px; font-size: 46px; text-shadow: 2px 2px 0 #000; white-space: nowrap; pointer-events: none; }
   #hint3.on { opacity: 1; }
@@ -158,7 +224,11 @@
   .keycap.wide { min-width: 260px; }
   #hint3.on .keycap { animation: keypress 0.9s ease-in-out infinite; }
   @keyframes keypress { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); box-shadow: 0 2px 0 #7a2200; } }
-  @media (prefers-reduced-motion: reduce) { #hint3.on .keycap { animation: none; } }
+  #hint2.on .keycap { animation: keypress 0.9s ease-in-out infinite; }
+  #hint2 .keycap.space-pic { min-width: 220px; height: 100px; line-height: 100px; padding: 0; position: relative; }
+  #hint2 .keycap.space-pic .drop { display: block; position: absolute; left: 50%; top: 50%; width: 28px; height: 40px; margin: -22px 0 0 -14px; background: #5ec8ff; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; transform: rotate(0deg); clip-path: ellipse(50% 50% at 50% 60%); box-shadow: inset -6px -4px 0 #2a8ec8; }
+  #hint2 .keycap.space-pic .drop:before { content: ''; position: absolute; left: 50%; top: -10px; width: 20px; height: 28px; margin-left: -10px; background: #5ec8ff; border-radius: 50% 50% 0 0; transform: rotate(-45deg) skewX(-8deg); }
+  @media (prefers-reduced-motion: reduce) { #hint3.on .keycap, #hint2.on .keycap { animation: none; } }
   .keycap { display: inline-block; min-width: 120px; text-align: center; padding: 0 22px; margin: 0 6px; border-radius: 14px; background: #f4f4f4; color: #222; border: 4px solid #999; border-bottom-width: 12px; text-shadow: none; font-size: 40px; line-height: 64px; vertical-align: middle; }
   .splashpuff { z-index: 8; transform-origin: 50% 80%; animation: puff 0.7s ease-out forwards; pointer-events: none; }
   @keyframes puff { 0% { opacity: 0; scale: 0.4; } 25% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1.25; } }
@@ -175,6 +245,20 @@
   /* ─── END OF LEVEL ─── */
   #transition { background: #000 url('lava_title_clean.jpg') center/cover no-repeat; }
   #tvid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; display: none; }
+  #erupt { background: #000; z-index: 90; }
+  #eruptVid, #eruptStill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+  #eruptStill.shake { animation: eruptShake 0.18s linear infinite; }
+  @keyframes eruptShake { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-6px, 3px); } 75% { transform: translate(5px, -2px); } }
+  @media (prefers-reduced-motion: reduce) { #eruptStill.shake { animation: none; } }
+  #eruptWhite { position: absolute; inset: 0; background: #fff; z-index: 5; opacity: 1; pointer-events: none; }
+  #eruptSkip { position: absolute; right: 60px; bottom: 90px; z-index: 6; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  #eruptCredit { position: absolute; right: 28px; bottom: 22px; z-index: 7; pointer-events: none;
+    font-size: 24px; line-height: 1.2; color: #fff; opacity: 0.8; letter-spacing: 0.02em;
+    text-shadow: 0 0 4px #000, 1px 1px 3px #000, 0 2px 8px rgba(0,0,0,0.9); white-space: nowrap; }
+  #eruptSkip.on { opacity: 1; }
+  #eruptSkip .keycap.space-pic { min-width: 140px; height: 64px; line-height: 64px; padding: 0; position: relative; }
+  #eruptSkip .keycap.space-pic .drop { display: block; position: absolute; left: 50%; top: 50%; width: 18px; height: 26px; margin: -14px 0 0 -9px; background: #5ec8ff; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; box-shadow: inset -4px -3px 0 #2a8ec8; }
+  #erupt.xfade { transition: opacity 0.6s linear; }          /* marker only; endClip sets opacity so this cannot snap to 0 and look like a cut */
   #complete { background: #1a0500 url('lava_title_clean.jpg') center/cover no-repeat; text-align: center; }
   #complete h1 { position: absolute; left: 0; right: 0; top: 250px; font-size: 140px; color: #ffd84d; text-shadow: 6px 6px 0 #5a1500, 0 0 40px #ff6a00; }
   #gemRow { position: absolute; left: 0; right: 0; top: 450px; display: flex; justify-content: center; gap: 36px; }
@@ -196,12 +280,18 @@
   <!-- ════════════════════ TITLE ════════════════════ -->
   <div id="title" class="screen">
     <img id="titleCar" alt="">
-    <button type="button" id="playLevel3">Play level 3<span>press 3</span></button>
     <div class="press">Press any key to start</div>
   </div>
 
   <!-- ════════════════════ TRANSITION + LEVEL COMPLETE ════════════════════ -->
   <div id="transition" class="screen"><video id="tvid" playsinline preload="auto"></video></div>
+  <div id="erupt" class="screen">
+    <video id="eruptVid" playsinline muted preload="auto"></video>
+    <img id="eruptStill" alt="">
+    <div id="eruptWhite"></div>
+    <div id="eruptSkip" aria-hidden="true"></div>
+    <div id="eruptCredit">Created with Grok</div>
+  </div>
   <div id="complete" class="screen">
     <h1>Level 1 complete!</h1>
     <div id="gemRow" aria-label="gems found"></div>
@@ -213,6 +303,7 @@
     <div id="world"></div>
     <div id="hud"></div>
     <div id="hint">Collect all 5 gems to open the door!</div>
+    <div id="walkHint" aria-hidden="true"><span class="keycap" aria-hidden="true">&larr;</span><span class="keycap walk-right" aria-hidden="true">&rarr;</span></div>
     <img id="zacky" src="Zacky_stand.png" alt="Zacky">
     <div id="flash"></div>
   </div>
@@ -223,15 +314,19 @@
     <div id="hud2"></div>
     <div id="hint2"></div>
   </div>
-  <div id="celebrate" class="screen"><div class="cel-bg"></div><div id="sparks"></div><div class="press">Press Enter for level 3</div></div>
+  <div id="celebrate" class="screen"><div class="cel-bg"></div><div id="sparks"></div><div class="press">Press Enter for the boss</div></div>
+
+  <!-- ════════════════════ BOSS (stub for O1; B1 fills this in) ════════════════════ -->
+  <div id="boss" class="screen"><div id="worldB"></div><div id="hintB"></div><div id="barB" data-count="4" data-hits="0" aria-hidden="true"></div><div id="whiteB"></div></div>
 
   <!-- ════════════════════ LEVEL 3 END ════════════════════ -->
   <div id="celebrate3" class="screen">
     <div class="c3-bg"></div><div class="c3-confetti"></div>
-    <h1>Level 3 complete!</h1>
+    <h1>You saved the day!</h1>
+    <div id="starRow3" aria-hidden="true"><span class="starWrap3"><i class="star3"></i><img class="sparkle3" src="sparkle.png" alt=""></span><span class="starWrap3"><i class="star3"></i><img class="sparkle3" src="sparkle.png" alt=""></span><span class="starWrap3"><i class="star3"></i><img class="sparkle3" src="sparkle.png" alt=""></span><span class="starWrap3"><i class="star3"></i><img class="sparkle3" src="sparkle.png" alt=""></span></div>
     <div id="count3"></div>
     <div id="gemRow3" aria-label="gems found"></div>
-    <div class="press">Press Enter to play again</div>
+    <div id="finaleKey" aria-hidden="true"><span class="keycap wide space-pic"><span class="drop"></span></span></div>
   </div>
 
   <!-- ════════════════════ LEVEL 3 (lava chase) ════════════════════ -->
@@ -251,7 +346,7 @@
     <div id="hint3"></div>
     <div id="spk3"></div><div id="zoom3">Zoom!</div>
     <div id="flash3"></div><div id="whoops3">Whoops!</div>
-    <div id="ready3"><h1>Lava chase!</h1><div class="press">Press Enter to run!</div></div>
+    <div id="ready3"><h1>Lava chase!</h1><div class="ready-key" aria-hidden="true"><span class="keycap wide space-pic"><span class="drop"></span></span></div><div class="press">Press Space to run!</div></div>
   </div>
 </div>
 
@@ -276,6 +371,8 @@
 <audio id="cheerSfx" src="finish_cheer.mp3" preload="auto"></audio>
 <audio id="pickupSfx" src="pickup.mp3" preload="auto"></audio>
 <audio id="sprayAudio" src="water_spray.mp3" preload="auto"></audio>
+<audio id="bossMusic" src="assets/level-boss/boss_music.mp3" preload="auto"></audio>
+<audio id="treeWakeSfx" src="assets/level-boss/tree_wake.mp3" preload="auto"></audio>
 <audio id="coolAudio" src="monster_cool.mp3" preload="auto"></audio>
 <audio id="completeSfx" src="level_complete.mp3" preload="auto"></audio>
 <audio id="gemSfx" src="gem_collect.mp3" preload="auto"></audio>
@@ -291,9 +388,9 @@ const L2_DEFAULTS = {
   hitsToCoolMonster: 1,      // water hits to cool one monster
   hitsToCoolPool: 1,         // water hits to turn one lava pool into a rock bridge
   blobSpeed: 520,            // px/s, a slow big blob
-  maxBlobs: 3,               // blobs on screen at once
-  sprayCooldown: 0.35,       // seconds between sprays (holding Enter never floods)
-  hintOn: true               // the "Press Enter to splash!" hint
+  maxBlobs: 12,              // on screen at once (high enough that the 0.35s rate is never capped)
+  sprayCooldown: ZackyShared.FIRE_GAP,  // follows the shared fire rate; a test config may override
+  hintOn: true               // picture hint (Space-key, no words) after the blaster is picked up
 };
 const L2_CFG = Object.assign({}, L2_DEFAULTS, window.ZACKY_L2_CONFIG || {});
 /* ═══════════════ LEVEL 3 SETTINGS (the one config block for level 3: change a value here, or set window.ZACKY_L3_CONFIG = { ... } before the page script. The logic lives in level3.js) ═══════════════ */
@@ -307,7 +404,7 @@ const L3_DEFAULTS = {
   lavaRecover: 0.04,           // how much of the wave goes back down every second
   checkpointEverySeconds: 5,   // a catch bounces Zacky back to the last multiple of this many seconds (at least 2 and at most maxRewindSeconds back)
   maxRewindSeconds: 5,         // a catch never rewinds the run by more than this
-  hintsOn: true,               // the "Press Space to jump!" and arrows hints (each shows once)
+  hintsOn: true,               // the arrows and donut hints (each shows once)
   /* ── level 3 v2 ── */
   sceneryGapMs: 600,           // a new roadside prop (rock, tree, post, bush) every this many ms of running; they recede towards the volcano
   sceneryFactor: 0.78,         // how fast the scenery recedes, as a fraction of how fast rocks and gems come at Zacky (0.70 to 0.85: the sides move nearly as fast as the rocks)
@@ -374,6 +471,81 @@ const L3_DEFAULTS = {
   rumbleVolume: 0.2            // the loud volcano rumble (0 to 1, always kept below the music at 0.5)
 };
 const L3_CFG = Object.assign({}, L3_DEFAULTS, window.ZACKY_L3_CONFIG || {});
+/* ═══════════════ BOSS SETTINGS ═══════════════ */
+const L_BOSS_DEFAULTS = {
+  walkSpeed: 420,              // same as level 2
+  spawnX: 100,                 // starts on the left
+  walkMax: 1280,               // left two-thirds of the 1920 stage
+  treeX: 1420,                 // bottom-centre of the tree (open sand on the right)
+  treeH: 370,                  // about a third of the screen tall (Ali: 360-380); Zacky stays level-2 size
+  musicLoopEnd: 64,            // seconds; trims the 26ms mp3 pad so the Web Audio loop has no gap
+  musicVol: 0.5,
+  introS: 6,                   // upgrade plays itself; no button needed
+  skipLockS: 1,                // skip is locked, then any fresh key
+  introEndX: 280,              // Zacky walks in this far with the level 2 blaster
+  wakeAt: 0.6,                 // tree yawn-roar
+  pfftAt: 1.5,                 // the short splash that falls short
+  pfftTravel: 360,             // px; never reaches the tree
+  biscuitAt: 2.2,              // Biscuit starts running in with the Super Splasher
+  biscuitX: 400,               // where he sits by the hint
+  biscuitSpeed: 700,
+  biscuitH: 190,
+  gunDropX: 440,
+  swapAt: 3.8,                 // auto-swap, sparkle and ta-da
+  hintAt: 5.5,
+  hintWaitS: 8,                // hint returns if there's no splash for this long
+  maxBlobs: 8,
+  blobScale: 1.6,
+  maxPuddles: 40,              // looks only; oldest puddle goes when the cap is hit
+  flames: 4,
+  hitsPerFlame: 8,             // 32 hits in all
+  treeHitW: 200,               // hit box half-width around the tree centre
+  hopPush: 250,                // rock hit: soft hop back along the startBounce path
+  safeS: 1.5,                  // after a rock hit he cannot be hit again
+  shadowLeadS: 1,              // glowing landing shadow, a second ahead
+  arcFlightS: 2,               // slow arcing rock
+  arcH: 220,                   // peak of the throw
+  arcW: 140,                   // drawn size of a big arcing rock
+  rollW: 90,                   // small rolling rock (a jump clears it)
+  rollSpeed: 200,
+  pebbleW: 72,
+  phase4ArcEveryS: 2.5,        // flame 4: one slow arcing rock
+  phase2EveryS: 2.8,           // flames 3-2: a rolling rock (or the odd arc)
+  phase2ArcEvery: 3,           // every third throw in this phase is an arc
+  phase1EveryS: 3.2,           // flame 1: a volley of small rocks
+  phase1Rocks: 3,
+  phase1Spread: 180,
+  aimAvoid: 220,               // last puff: never aimed at where Zacky stands
+  kindSlowAfter: 2,            // after this many rock hits, rocks slow by a quarter
+  kindSlowMul: 0.75,
+  kindOneAfter: 4,             // then only one rock at a time
+  kindShortAfter: 6,           // then rocks land short
+  landShortDist: 420,          // px left of the tree centre
+  throwStopS: 120,             // after 2 minutes the tree stops throwing
+  helpAfterS: 20,              // Biscuit squirts if the tree goes this long with no hit
+  sighS: 0.8,                  // steam sigh and a friendly wave after the last flame
+  uhOhS: 3,                    // lean, bubble, rumble, glow; then boom
+  fadeS: 0.9,                  // soft fade to white (skipped when reduced motion)
+  leanDeg: -12,                // toward the volcano in the middle of the arena
+  waveDeg: 5,
+  glowMax: 0.9,
+  shakePx: 7
+};
+const L_BOSS_CFG = Object.assign({}, L_BOSS_DEFAULTS, window.ZACKY_BOSS_CONFIG || {});
+const L_CLIP_DEFAULTS = {
+  file: 'assets/level-boss/eruption.mp4',
+  still: 'assets/level-boss/eruption_still.jpg',
+  skipLockS: 6,                // skip is locked until after the boom at 5.5s, then any fresh key
+  rumbleAt: 0,                 // game rumble from the start of the clip
+  boomAt: 5.5,                 // visible burst (about 5-6s)
+  startWaitS: 3,               // if the video has not started, use the still
+  stillS: 3,                   // fallback still, with a shake, then the crossfade
+  capS: 15,                    // never ended: carry on
+  crossfadeS: 0.6,             // into the chase ready screen, no hard cut
+  fadeInS: 0.5                 // the clip fades in from white
+};
+const L_CLIP_CFG = Object.assign({}, L_CLIP_DEFAULTS, window.ZACKY_CLIP_CONFIG || {});
+window.L_CLIP_CFG = L_CLIP_CFG;
 /* ═══════════════ STAGE SCALING (same as games 1 and 2) ═══════════════ */
 window.STAGE_SCALE = 1;
 (function () {
@@ -392,10 +564,8 @@ window.STAGE_SCALE = 1;
 /* ═══════════════ INPUT: keyboard allowlist, pointer lockout ═══════════════ */
 ['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchend', 'touchmove']
   .forEach(function (evtName) {
-    document.addEventListener(evtName, function (e) {
-      if (e.target && e.target.closest && e.target.closest('#playLevel3')) return;
-      e.preventDefault(); e.stopPropagation();
-    }, { capture: true, passive: false });
+    document.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); },
+      { capture: true, passive: false });
   });
 
 const ALLOWED_KEYS = new Set([' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape']);
@@ -403,18 +573,11 @@ const keys = {};            // currently held keys
 const keyHandlers = [];     // fn(key, isRepeat) called on each keydown
 document.addEventListener('keydown', function (e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;                 // browser shortcuts (Ctrl+R, Alt+Left, Cmd+W...) are left alone, never start or move the game
-  if (stage === 'title') {
-    // title screen: ANY key starts the game (letters, numbers, Shift, Tab...), except F1-F12 and Esc
-    if (/^F\d+$/.test(e.key) || e.key === 'Escape') return;       // F1-F12 stay browser keys, and Esc stays free to leave fullscreen: neither starts the game
-    if (e.key === '3') {                                          // staging shortcut: one tap opens level 3, instead of level 1
-      e.preventDefault();
-      if (e.repeat || screenLocked) return;
-      unlockAudio();
-      startLevel3();
-      return;
-    }
-    e.preventDefault();                                           // Tab must not move focus off the page
-    if (e.repeat) return;                                         // a held key never counts, and never double-fires
+  if (stage === 'title' || (stage === 'boss' && stateB.phase === 'intro') || stage === 'erupt' || (stage === 'level3' && state3.phase === 'ready')) {
+    // title: ANY key starts. Boss intro / clip: after the lock, ANY fresh key skips. Chase ready: ANY key (or a key still held from the clip) starts. F1-F12 and Esc stay browser keys.
+    if (/^F\d+$/.test(e.key) || e.key === 'Escape') return;
+    e.preventDefault();
+    if (e.repeat) return;
     keys[e.key] = true;
     unlockAudio();
     keyHandlers.forEach(function (fn) { fn(e.key, false); });
@@ -448,7 +611,7 @@ const TITLE_CAR = window.ZACKY_TITLE_CAR !== undefined ? window.ZACKY_TITLE_CAR 
   document.getElementById('title').style.backgroundImage = "url('" + TITLE_BG + "')";
   var car = document.getElementById('titleCar'); car.src = TITLE_CAR; car.style.display = 'block';
 })();
-const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png', 'volcano_chase_bg_v3_lossless.png', 'ravine_corridor_left.png', 'ravine_corridor_right.png', 'cliff_far_left.png', 'cliff_far_right.png', 'cliff_mid_left.png', 'cliff_mid_right.png', 'cliff_mid_tile.png', 'cliff_near_left.png', 'cliff_near_right.png', 'lip_near_left.png', 'lip_near_right.png', 'shelf_mid_left.png', 'shelf_mid_right.png', 'shelf_mid_tile.png', 'ground_ash_tile.png', 'ground_lava_vein.png', 'ridge_far_left.png', 'ridge_far_right.png', 'ash_mote.png', 'speed_lines.png', 'Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zacky_run_front_3.png', 'Zacky_run_front_4.png', 'Zacky_jump_front.png', 'Zacky_stumble_front.png', 'lava_wave_plain.png', 'volcano_glow_v2.png', 'confetti.png', 'sparkle.png', 'smoke_puff.png', 'lava_spurt.png', 'lava_rock.png', 'lava_rock_small.png', 'tree_side.png', 'rock_side.png', 'bush_side.png', 'post_side.png', 'path_dash.png', 'boulder_big.png', 'rock_cluster.png', 'charred_tree_2.png', 'stump.png', 'lava_vent.png', 'crystal_rocks.png', 'fence_post_2.png', 'ground_crack_1.png', 'ground_crack_2.png', 'pebbles.png', 'ridge_left.png', 'ridge_right.png', 'donut.png', 'car_front_empty.png', 'Zacky_in_car_front.png'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
+const PRELOAD = ['lava_title.jpg', 'lava_level1.jpg', 'lava_platform.png', 'lava_pool.png', 'lava_monster.png', 'gem.png', 'exit_door.png', 'friendly_character.png', 'friend_speech.png', 'lava_title_clean.jpg', 'Zacky_stand.png', 'Zacky_walking.png', 'Zacky_climb.png', 'Zacky_jump.png', 'lava_level2.jpg', 'lava_pool2.png', 'rock_bridge.png', 'lava_monster_hot.png', 'lava_monster_cooled.png', 'water_blob.png', 'splash.png', 'water_blaster.png', 'Zacky_blaster.png', 'Zacky_blaster_walk.png', 'celebration.png', 'volcano_chase_bg_v3_lossless.png', 'ravine_corridor_left.png', 'ravine_corridor_right.png', 'cliff_far_left.png', 'cliff_far_right.png', 'cliff_mid_left.png', 'cliff_mid_right.png', 'cliff_mid_tile.png', 'cliff_near_left.png', 'cliff_near_right.png', 'lip_near_left.png', 'lip_near_right.png', 'shelf_mid_left.png', 'shelf_mid_right.png', 'shelf_mid_tile.png', 'ground_ash_tile.png', 'ground_lava_vein.png', 'ridge_far_left.png', 'ridge_far_right.png', 'ash_mote.png', 'speed_lines.png', 'Zacky_run_front_1.png', 'Zacky_run_front_2.png', 'Zacky_run_front_3.png', 'Zacky_run_front_4.png', 'Zacky_jump_front.png', 'Zacky_stumble_front.png', 'lava_wave_plain.png', 'volcano_glow_v2.png', 'confetti.png', 'sparkle.png', 'smoke_puff.png', 'lava_spurt.png', 'lava_rock.png', 'lava_rock_small.png', 'tree_side.png', 'rock_side.png', 'bush_side.png', 'post_side.png', 'path_dash.png', 'boulder_big.png', 'rock_cluster.png', 'charred_tree_2.png', 'stump.png', 'lava_vent.png', 'crystal_rocks.png', 'fence_post_2.png', 'ground_crack_1.png', 'ground_crack_2.png', 'pebbles.png', 'ridge_left.png', 'ridge_right.png', 'donut.png', 'car_front_empty.png', 'Zacky_in_car_front.png', 'assets/level-boss/boss_arena_bg.jpg', 'assets/level-boss/lava_tree_hot.png', 'assets/level-boss/lava_tree_friendly.png', 'assets/level-boss/super_splasher.png', 'assets/level-boss/Zacky_super.png', 'assets/level-boss/Zacky_super_walk.png', 'assets/level-boss/flame_icon.png', 'assets/level-boss/eruption_still.jpg'].concat(TITLE_BG && TITLE_CAR ? [TITLE_BG, TITLE_CAR] : []);
 function preload(urls) {
   var jobs = urls.map(function (u) {
     return new Promise(function (resolve) {
@@ -465,9 +628,8 @@ function preload(urls) {
 preload(PRELOAD).then(function () {
   document.getElementById('loading').classList.remove('active');
   document.getElementById('loading').style.display = 'none';
+  showScreen('title', function () { playMusic(titleMusic); });
   window.gameReady = true;
-  if (new URLSearchParams(location.search).get('level') === '3') startLevel3();
-  else showScreen('title', function () { playMusic(titleMusic); });
 });
 
 /* ═══════════════ MUSIC ═══════════════ */
@@ -518,10 +680,33 @@ audioUnlockHandlers.push(function () { if (currentMusic) { var t = currentMusic;
     var sz = 30 + (i % 3) * 14; e.style.width = e.style.height = sz + 'px'; host.appendChild(e);
   });
 })();
-const screens = { title: document.getElementById('title'), level1: document.getElementById('level1'), level2: document.getElementById('level2'), celebrate: document.getElementById('celebrate'), level3: document.getElementById('level3'), celebrate3: document.getElementById('celebrate3'),
-  transition: document.getElementById('transition'), complete: document.getElementById('complete') };
+const screens = { title: document.getElementById('title'), level1: document.getElementById('level1'), level2: document.getElementById('level2'), celebrate: document.getElementById('celebrate'), boss: document.getElementById('boss'), level3: document.getElementById('level3'), celebrate3: document.getElementById('celebrate3'),
+  transition: document.getElementById('transition'), erupt: document.getElementById('erupt'), complete: document.getElementById('complete') };
+const START_LEVEL = (function () {                                      // ?level=1|2|3|4 -> level 1, level 2, boss, chase; no flag is the full order
+  var m = /(?:^|[?&])level=([1-4])(?:&|$)/.exec(location.search || '');
+  return m ? m[1] : '';
+})();
+function startFromTitle() {
+  if (START_LEVEL === '2') startLevel2();
+  else if (START_LEVEL === '3') startBoss();
+  else if (START_LEVEL === '4') startLevel3();
+  else startLevel1();
+}
 let stage = 'loading', screenLocked = false;
 function showScreen(name, onReady) {
+  if (clipCrossfading && screens.erupt) {
+    Object.values(screens).forEach(function (el) {
+      if (el === screens.erupt) return;
+      el.style.display = 'none'; el.classList.remove('active');
+    });
+    var dest = screens[name];
+    dest.style.display = 'block'; dest.classList.add('active');
+    dest.style.opacity = '1';                                  // ready is fully there under the clip; the fade is the overlay, not a 0.5s screen pop
+    stage = name;
+    if (onReady) onReady();
+    // stay locked until endClip finishes the 0.6s fade (a held skip key must not start the run mid-fade)
+    return;
+  }
   screenLocked = true;
   var cur = document.querySelector('.screen.active');
   if (cur) cur.classList.remove('active');
@@ -545,20 +730,18 @@ function startLevel1() {
 }
 keyHandlers.push(function (key, isRepeat) {
   if (screenLocked) return;
-  if (stage === 'title') { startLevel1(); return; }              // any key starts; the same key press goes no further into the game
-  if (stage === 'level1' && ZackyShared.isJumpKey(key)) { ZackyShared.pressJump(player); player.hopFwd = (key === ' '); bounceHint.clear(); }   // Space hops forward, the up arrow jumps straight up
-  if (stage === 'level1' && key === 'Enter' && !state.finished) talkToPup();
+  if (stage === 'title') { startFromTitle(); return; }           // title shows first; the first key goes to ?level= or into level 1
+  if (stage === 'level1' && ZackyShared.isJumpKey(key)) { ZackyShared.pressJump(player); bounceHint.clear(); }   // Up is an ordinary jump; the arrows steer
+  if (stage === 'level1' && ZackyShared.isShootKey(key) && !state.finished && !isRepeat) sprayBlob(l1Spray, null);   // Space or Enter: a harmless splash
+  if (stage === 'level1' && (key === 'ArrowLeft' || key === 'ArrowRight')) hideWalkHint();
   if (stage === 'transition' && key === 'Enter') endTransition();
   if (stage === 'complete' && (key === 'Enter' || (key === ' ' && !isRepeat))) startLevel2();   // level 1 -> level 2 (Space too, so a child playing with Space alone is not stuck; a held Space never skips it)
   if (stage === 'level2') level2Key(key, isRepeat);
-  if (stage === 'celebrate' && key === 'Enter') startLevel3();                        // level 2's end -> level 3
+  if (stage === 'celebrate' && (key === 'Enter' || (key === ' ' && !isRepeat))) startBoss();   // level 2's end -> the boss (Space too, as on the level 1 end screen)
+  if (stage === 'boss') bossKey(key, isRepeat);
+  if (stage === 'erupt') { clipKey(key, isRepeat); return; }
   if (stage === 'level3') level3Key(key, isRepeat);
-  if (stage === 'celebrate3') level3Done3Key(key);                                    // level 3's end -> back to the title
-});
-document.getElementById('playLevel3').addEventListener('click', function () {
-  if (stage !== 'title' || screenLocked) return;
-  unlockAudio();
-  startLevel3();
+  if (stage === 'celebrate3') level3Done3Key(key, isRepeat);                          // finale: after 3s, Enter or a fresh Space -> the title; a held Space stays
 });
 
 /* ═════════════════════════════════════════════════
@@ -593,11 +776,10 @@ const ZACKY_SCALE = 1.43;                               // Zacky is drawn 1.43x 
 const HALF_W = 37, BODY_H = 257;                       // Zacky's hitbox (34 and 234 before the last 1.1x; 28 and 180 originally)
 const STAGE_W = 1920;
 
-const HOP_FWD = { dist: 200, airS: 2 * 1100 / 2600 };      // level 1: a Space jump also drifts 200px the way he faces (the air time of a jump on the floor is 2 x JUMP_V / GRAVITY)
 const BOUNCE = { floorY: FLOOR_Y, clearance: 70, dur: 0.55, arc: 190, minX: HALF_W + 12, maxX: STAGE_W - HALF_W - 12 };   // lava soft bounce: lands 70px outside the pool, past the 25px lava overhang plus Zacky's half width, so a bounce can never end in lava
 const BOUNCE1 = Object.assign({}, BOUNCE, { dur: 0.7, arc: 120 });      // level 1 only (Nov 2): a gentler lava bounce, 0.7s and a lower peak; level 2 keeps BOUNCE as it was
 const player = { x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, onGround: true, face: 1, jumpBuffer: 0, walkT: 0, invuln: 0 };
-const state = { gems: 0, finished: false, hintT: 0, bubbleT: 0, deaths: 0, monsterX: MONSTER.min, monsterDir: 1, bounce: null, bounces: 0 };
+const state = { gems: 0, finished: false, hintT: 0, bubbleT: 0, deaths: 0, monsterX: MONSTER.min, monsterDir: 1, bounce: null, bounces: 0, walkHint: true };
 let monsterEl = null, doorEl = null, bubbleEl = null, tipEl = null;
 const gemEls = [];
 const worldEl = document.getElementById('world');
@@ -610,7 +792,7 @@ const zackyEl = document.getElementById('zacky');
   addImg('friendly_character.png', PUP.x - 66, FLOOR_Y + 6 - PUP.h, null, 'pup', 5).style.height = PUP.h + 'px';
   doorEl = addImg('exit_door.png', DOOR.x - 114, FLOOR_Y + 4 - DOOR.h, null, 'door locked', 2); doorEl.style.height = DOOR.h + 'px';
   bubbleEl = addImg('friend_speech.png', PUP.x - 70, FLOOR_Y - PUP.h - 270, 500, 'bubble', 30); bubbleEl.style.display = 'none';
-  tipEl = document.createElement('div'); tipEl.className = 'abs tip'; tipEl.textContent = 'Press Enter';
+  tipEl = document.createElement('div'); tipEl.className = 'abs tip'; tipEl.textContent = '';
   tipEl.style.cssText = 'left:' + PUP.x + 'px;top:' + (FLOOR_Y - PUP.h - 50) + 'px;display:none'; worldEl.appendChild(tipEl);
   monsterEl = addImg('lava_monster.png', 0, FLOOR_Y + 4 - MONSTER.sprite, null, 'monster', 5);
   monsterEl.style.height = MONSTER.sprite + 'px';
@@ -623,10 +805,19 @@ function addImg(src, x, y, w, cls, z) {
   return i;
 }
 
+function showWalkHint() {
+  var el = document.getElementById('walkHint');
+  if (el) el.classList.toggle('on', !!(state.walkHint && stage === 'level1' && !state.finished));
+}
+function hideWalkHint() { state.walkHint = false; showWalkHint(); }
 function resetLevel() {
+
   player.x = SPAWN.x; player.y = SPAWN.y; player.vx = 0; player.vy = 0; player.onGround = true; player.face = 1;
-  player.jumpBuffer = 0; player.coyote = 0; player.walkT = 0; player.invuln = 0; player.hopFwd = false; player.hopVx = 0;
-  cutVoice(); bounceHint.clear(); state.gems = 0; state.finished = false; state.hintT = 0; state.bubbleT = 0; state.pupGreeted = false; state.bubbleStay = false;
+  player.jumpBuffer = 0; player.coyote = 0; player.walkT = 0; player.invuln = 0;
+  cutVoice(); bounceHint.clear(); state.gems = 0; state.finished = false; state.hintT = 0; state.bubbleT = 0; state.pupGreeted = false; state.bubbleStay = false; state.walkHint = true;
+  showWalkHint();
+  state.sprayCd = 0; state.fired = 0; state.sprayed = false; state.helpPool = null; state.helpPoolN = 0; state.helpMonN = 0;
+  blobs1.slice().forEach(function (b) { removeBlob(b, blobs1); });
   gemEls.forEach(function (e) { e.classList.remove('got'); });
   setDoor(); showCount(); bubbleEl.style.display = 'none'; tipEl.style.display = 'none';
   zackyEl.style.opacity = ''; zackyEl.src = 'Zacky_stand.png';
@@ -646,7 +837,7 @@ function talkToPup() {
   if (Math.abs(player.x - PUP.x) > 170) return;
   state.bubbleStay = false;
   var wasShut = bubbleEl.style.display === 'none';
-  state.bubbleT = 6; bubbleEl.style.display = 'block'; tipEl.style.display = 'none';
+  state.bubbleT = 6; bubbleEl.style.display = 'block';
   if (wasShut) sfx(biscuitVoice, 0.9);                  // Biscuit speaks when his bubble opens (not again on every Enter while it is open); sfx() stays silent until the first key
 }
 function updateItems(dt) {
@@ -654,7 +845,7 @@ function updateItems(dt) {
   GEMS.forEach(function (g, i) {
     var e = gemEls[i];
     if (e.classList.contains('got')) return;
-    if (state.bounce) return;                            // a lava bounce flies past a gem: it only counts when he hops for it
+    if (state.bounce && !state.bounce.far) return;       // a normal lava bounce flies past a gem; a helping (far) bounce can collect the gem over that pool
     if (Math.abs(player.x - g.x) < (g.reach || GEM_REACH) && g.y + 45 > player.y - GEM_HEAD && g.y - 45 < player.y) {
       e.classList.add('got'); state.gems++; sfx(gemSfx, 0.7); showCount(); setDoor();
       if (state.gems >= GEMS.length) state.hintT = 0;                 // the fifth gem is in: the 'collect all 5' hint goes away at once
@@ -662,13 +853,14 @@ function updateItems(dt) {
   });
   // the pup: hint when near, speech bubble after Enter, gone when Zacky walks away
   var near = Math.abs(player.x - PUP.x) <= 170;
-  // the first time Zacky reaches Biscuit, his hint opens by itself and stays for a few seconds even if Zacky keeps walking (no Enter needed)
+  // Biscuit talks by himself when Zacky walks up; after Zacky goes BUBBLE_FAR away, a later walk-up talks again. Space never talks.
+  if (Math.abs(player.x - PUP.x) > BUBBLE_FAR) state.pupGreeted = false;
   if (!state.pupGreeted && Math.abs(player.x - PUP.x) <= PUP_GREET) { state.pupGreeted = true; talkToPup(); state.bubbleStay = true; }
   if (state.bubbleT > 0) {
     state.bubbleT -= dt;
     if (state.bubbleT <= 0 || Math.abs(player.x - PUP.x) > BUBBLE_FAR || (!near && !state.bubbleStay)) closeBubble();
   }
-  tipEl.style.display = (near && state.bubbleT <= 0) ? 'block' : 'none';
+  tipEl.style.display = 'none';
   // the exit
   if (Math.abs(player.x - DOOR.x) < DOOR_REACH && player.y > FLOOR_Y - 160) {
     if (state.gems >= GEMS.length) finishLevel();
@@ -683,7 +875,7 @@ function fillGemRow() {                                  // the end screen shows
 }
 function finishLevel() {
   cutVoice();
-  state.finished = true; fillGemRow();
+  state.finished = true; hideWalkHint(); fillGemRow();
   walkSfx.pause();
   stopMusic(); sfx(completeSfx, 0.8);                                  // the jingle starts the moment Zacky touches the door (no silence while the screen changes)
   player.x = DOOR.x; player.vx = 0; player.vy = 0; player.y = FLOOR_Y; player.pose = 'Zacky_climb.png'; zackyEl.src = 'Zacky_climb.png';
@@ -695,26 +887,20 @@ function finishLevel() {
    With no clip, "Level 1 complete" shows straight away (about 0.8s after the door: the step-in plus one fade). With a clip, the clip plays first; if it fails to load or play, the still shows for STILL_MS and the game carries on.
    Set window.ZACKY_TRANSITION_VIDEO (or the constant below) to the clip's file name, e.g. 'Lava_Transition.mp4'. */
 const TRANSITION_VIDEO = window.ZACKY_TRANSITION_VIDEO || null;
-const STILL_MS = 2500, VIDEO_START_MS = 5000, VIDEO_MAX_MS = 15000;
+const STILL_MS = 2500, VIDEO_START_MS = 5000, VIDEO_MAX_MS = 15000;   // kept for the empty level-1 path; clip timings live in L_CLIP_CFG
 let transitionDone = true, transitionTimers = [];
+let clipCrossfading = false, clipTimers = [], clip = { done: true, allowed: false, playing: false, fallback: false, t0: 0, next: null };
 function later(fn, ms) { transitionTimers.push(setTimeout(fn, ms)); }
+function laterC(fn, ms) { clipTimers.push(setTimeout(fn, ms)); }
+function clearClipTimers() { clipTimers.forEach(clearTimeout); clipTimers = []; }
 function startTransition() {
   stopMusic(); walkSfx.pause();
   if (!TRANSITION_VIDEO) { transitionDone = true; showScreen('complete'); return; }   // no clip: straight to "Level 1 complete" (no blank still, no wait)
   transitionDone = false;
-  showScreen('transition', function () {
-    var vid = document.getElementById('tvid');
-    function fail() { if (transitionDone) return; vid.style.display = 'none'; transitionTimers.forEach(clearTimeout); later(endTransition, STILL_MS); }
-    vid.onerror = fail;
-    vid.onended = endTransition;
-    vid.onplaying = function () { vid.style.display = 'block'; };
-    later(function () { if (vid.readyState < 3 || vid.paused) fail(); }, VIDEO_START_MS);   // never started: use the still
-    later(endTransition, VIDEO_MAX_MS);                                                        // never ended: move on
-    vid.src = TRANSITION_VIDEO;
-    var pr = vid.play(); if (pr && pr.catch) pr.catch(fail);
-  });
+  playClip(TRANSITION_VIDEO, null, function () { showScreen('complete'); transitionDone = true; });
 }
 function endTransition() {
+  if (stage === 'erupt' && !clip.done) { endClip(); return; }
   if (transitionDone) return;
   transitionDone = true;
   transitionTimers.forEach(clearTimeout); transitionTimers = [];
@@ -723,41 +909,125 @@ function endTransition() {
   vid.removeAttribute('src'); vid.style.display = 'none';
   showScreen('complete');
 }
+function stopClipAudio() {
+  var rs = document.getElementById('rumbleSfx'), bs = document.getElementById('boomSfx');
+  if (rs) { try { rs.pause(); rs.currentTime = 0; } catch (e) {} }
+  if (bs) { try { bs.pause(); bs.currentTime = 0; } catch (e) {} }
+}
+function playClip(file, still, next) {
+  clearClipTimers();
+  stopMusic(); walkSfx.pause();
+  if (typeof stopBossMusic === 'function') stopBossMusic();
+  clip = { done: false, allowed: false, playing: false, fallback: false, t0: performance.now() / 1000, next: next, file: file, still: still || L_CLIP_CFG.still };
+  clipCrossfading = false;
+  var erupt = document.getElementById('erupt'), vid = document.getElementById('eruptVid'), stillEl = document.getElementById('eruptStill');
+  var white = document.getElementById('eruptWhite'), skip = document.getElementById('eruptSkip');
+  Object.values(screens).forEach(function (el) { if (el !== erupt) { el.classList.remove('active'); } });
+  erupt.style.display = 'block'; erupt.style.opacity = '1'; erupt.classList.add('active'); erupt.classList.remove('xfade');
+  stage = 'erupt';
+  if (white) { white.style.transition = 'none'; white.style.opacity = '1'; void white.offsetWidth; white.style.transition = 'opacity ' + L_CLIP_CFG.fadeInS + 's linear'; }
+  if (skip) { skip.classList.remove('on'); skip.innerHTML = '<span class="keycap wide space-pic" aria-hidden="true"><span class="drop"></span></span>'; }
+  if (stillEl) { stillEl.style.display = 'none'; stillEl.classList.remove('shake'); if (clip.still) stillEl.src = clip.still; }
+  vid.onerror = vid.onended = vid.onplaying = vid.ontimeupdate = null;
+  try { vid.pause(); } catch (e) {}
+  vid.removeAttribute('src'); vid.style.display = 'none'; vid.muted = true;
+  var rs = document.getElementById('rumbleSfx');
+  if (rs && L_CLIP_CFG.rumbleAt <= 0) { try { rs.currentTime = 0; rs.volume = 0.7; rs.loop = true; rs.play().catch(function () {}); } catch (e) {} }
+  else if (rs) laterC(function () { try { rs.currentTime = 0; rs.volume = 0.7; rs.loop = true; rs.play().catch(function () {}); } catch (e) {} }, L_CLIP_CFG.rumbleAt * 1000);
+  laterC(function () { if (!clip.done) sfx(document.getElementById('boomSfx'), 0.85); }, L_CLIP_CFG.boomAt * 1000);
+  laterC(function () { clip.allowed = true; if (skip) skip.classList.add('on'); }, L_CLIP_CFG.skipLockS * 1000);
+  laterC(function () { if (!clip.playing && !clip.done) startClipFallback(); }, L_CLIP_CFG.startWaitS * 1000);
+  laterC(function () { if (!clip.done) endClip(); }, L_CLIP_CFG.capS * 1000);
+  vid.onplaying = function () {
+    if (clip.done || clip.fallback) return;
+    clip.playing = true;
+    vid.style.display = 'block';
+    if (stillEl) { stillEl.style.display = 'none'; stillEl.classList.remove('shake'); }
+    if (white) white.style.opacity = '0';
+  };
+  vid.ontimeupdate = function () {
+    if (clip.done || clip.fallback || !vid.duration) return;
+    if (vid.currentTime >= vid.duration - 0.12) { try { vid.pause(); } catch (e) {} endClip(); }
+  };
+  vid.onended = function () { try { vid.pause(); } catch (e) {} if (!clip.done) endClip(); };
+  vid.onerror = function () { if (!clip.playing && !clip.done) startClipFallback(); };
+  if (file) {
+    vid.src = file;
+    var pr = vid.play(); if (pr && pr.catch) pr.catch(function () { if (!clip.playing && !clip.done) startClipFallback(); });
+  } else startClipFallback();
+}
+function startClipFallback() {
+  if (clip.fallback || clip.done) return;
+  clip.fallback = true; clip.playing = false;
+  var vid = document.getElementById('eruptVid'), stillEl = document.getElementById('eruptStill'), white = document.getElementById('eruptWhite');
+  try { vid.pause(); } catch (e) {}
+  vid.style.display = 'none';
+  if (stillEl && clip.still) {
+    stillEl.src = clip.still;
+    stillEl.style.display = 'block';
+    if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) stillEl.classList.add('shake');
+  }
+  if (white) white.style.opacity = '0';
+  // rumble is already going; make sure the boom is heard during the short still
+  laterC(function () { if (!clip.done) sfx(document.getElementById('boomSfx'), 0.85); }, Math.min(1.2, L_CLIP_CFG.stillS * 0.4) * 1000);
+  laterC(function () { if (!clip.done) endClip(); }, L_CLIP_CFG.stillS * 1000);
+}
+function endClip() {
+  if (clip.done) return;
+  clip.done = true;
+  clearClipTimers();
+  stopClipAudio();
+  var erupt = document.getElementById('erupt'), skip = document.getElementById('eruptSkip'), vid = document.getElementById('eruptVid');
+  if (skip) skip.classList.remove('on');
+  try { vid.pause(); } catch (e) {}                            // hold the last painted frame; an ended video can flash black and look like a cut
+  clipCrossfading = true;
+  screenLocked = true;
+  erupt.classList.remove('xfade');
+  erupt.style.transition = 'none';
+  erupt.style.opacity = '1';
+  void erupt.offsetWidth;
+  var next = clip.next;
+  if (typeof next === 'function') next();                      // show the chase ready underneath, still fully covered by the clip
+  erupt.classList.add('xfade');
+  erupt.style.transition = 'opacity ' + L_CLIP_CFG.crossfadeS + 's linear';
+  void erupt.offsetWidth;
+  erupt.style.opacity = '0';                                   // 0.6s linear fade; the clock starts now, after the ready screen is in place
+  var finished = false;
+  function finishEndClip() {
+    if (finished) return;
+    finished = true;
+    erupt.classList.remove('active', 'xfade');
+    erupt.style.display = 'none'; erupt.style.opacity = '1'; erupt.style.transition = '';
+    vid.removeAttribute('src'); vid.style.display = 'none';
+    var stillEl = document.getElementById('eruptStill');
+    if (stillEl) { stillEl.style.display = 'none'; stillEl.classList.remove('shake'); stillEl.removeAttribute('src'); }
+    var white = document.getElementById('eruptWhite'); if (white) white.style.opacity = '1';
+    clipCrossfading = false;
+    screenLocked = false;
+    clearClipTimers();
+  }
+  erupt.addEventListener('transitionend', function te(ev) {
+    if (ev.target !== erupt) return;
+    if (ev.propertyName && ev.propertyName !== 'opacity') return;
+    if (parseFloat(getComputedStyle(erupt).opacity) > 0.05) return;   // ignore early/spurious ends; the fade must finish
+    erupt.removeEventListener('transitionend', te);
+    finishEndClip();
+  });
+  laterC(finishEndClip, L_CLIP_CFG.crossfadeS * 1000 + 200);
+}
+function clipKey(key, isRepeat) {
+  if (stage !== 'erupt' || clip.done || isRepeat) return;
+  if (clip.allowed) endClip();
+}
 function updateBounce(dt, st) {                          // Zacky is mid-hop out of the lava: a fixed path, no input (st = the level's state)
   st = st || state;
   var flying = ZackyShared.stepBounce(st.bounce, dt, player);
   player.face = st.bounce.face || st.bounce.side;     // faces the way he is going (level 1 bounces set .face: he keeps facing the hazard)
-  player.onGround = !flying; player.jumpBuffer = 0; player.coyote = 0; player.hopVx = 0;
+  player.onGround = !flying; player.jumpBuffer = 0; player.coyote = 0;
   player.pose = flying ? curPoses.jump : curPoses.stand;
   if (!zackyEl.src.endsWith(player.pose)) zackyEl.src = player.pose;
   if (!walkSfx.paused) walkSfx.pause();
   if (!flying) st.bounce = null;
-}
-// Space hop length (level 1, Nov 2): the usual 200px, but when that would land on the floor in lava or on the monster's patch, take the nearest length that lands somewhere safe (on a platform counts)
-const HOP_TRIES = [200, 230, 170, 260, 140, 300, 110, 80, 330];
-const HOP_MARGIN = 12;
-function hopLanding(dir, dist) {                          // where a hop of this length ends: the same physics as updatePlayer, stepped ahead
-  var x = player.x, y = player.y, vy = -JUMP_V, vx = dir * dist / HOP_FWD.airS, dt = 1 / 120;
-  for (var i = 0; i < 400; i++) {
-    var prevY = y;
-    x = Math.min(STAGE_W - HALF_W - 12, Math.max(HALF_W + 12, x + vx * dt));
-    vy = Math.min(MAX_FALL, vy + GRAVITY * dt); y += vy * dt;
-    if (vy >= 0) {
-      var land = (prevY <= FLOOR_Y && y >= FLOOR_Y) ? FLOOR_Y : null;
-      for (var k = 0; k < curPlatforms.length; k++) { var q = curPlatforms[k]; if (ZackyShared.overPlatform(x, HALF_W, q.x, q.w) && prevY <= q.y + 0.01 && y >= q.y) land = Math.min(land === null ? 1e9 : land, q.y); }
-      if (land !== null) return { x: x, y: land };
-    }
-  }
-  return { x: x, y: FLOOR_Y };
-}
-function hopLandingSafe(l) {
-  if (l.y < FLOOR_Y - 1) return true;                     // on a platform
-  for (var i = 0; i < POOLS.length; i++) if (l.x > POOLS[i].x + LAVA_EDGE - HALF_W - HOP_MARGIN && l.x < POOLS[i].x + POOLS[i].w - LAVA_EDGE + HALF_W + HOP_MARGIN) return false;
-  return !(l.x > MONSTER.min - MONSTER.w / 2 - HALF_W - HOP_MARGIN && l.x < MONSTER.max + MONSTER.w / 2 + HALF_W + HOP_MARGIN);
-}
-function hopDist(dir) {
-  for (var i = 0; i < HOP_TRIES.length; i++) if (hopLandingSafe(hopLanding(dir, HOP_TRIES[i]))) return HOP_TRIES[i];
-  return HOP_FWD.dist;
 }
 function updatePlayer(dt) {
   var dir = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
@@ -765,9 +1035,7 @@ function updatePlayer(dt) {
   if (dir) player.face = dir;
   if (ZackyShared.stepJump(player, dt)) {                // on the ground, or within 120ms of leaving a ledge
     player.vy = -JUMP_V; player.onGround = false; sfx(jumpSfx, 0.5);
-    player.hopVx = (stage === 'level1' && player.hopFwd) ? player.face * hopDist(player.face) / HOP_FWD.airS : 0;   // Space alone gets a child through level 1
   }
-  if (!dir && player.hopVx && !player.onGround) player.vx = player.hopVx;   // the arrows still steer in the air; with none held, the hop drifts forward
   var prevY = player.y;
   player.x = Math.min(STAGE_W - HALF_W - 12, Math.max(HALF_W + 12, player.x + player.vx * dt));   // can't leave the stage
   player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
@@ -781,7 +1049,7 @@ function updatePlayer(dt) {
     });
   }
   if (player.y > FLOOR_Y) land = FLOOR_Y;                              // never below the floor
-  if (land !== null) { player.y = land; player.vy = 0; player.onGround = true; player.hopVx = 0; }
+  if (land !== null) { player.y = land; player.vy = 0; player.onGround = true; }
   else if (player.vy !== 0) player.onGround = false;
   // animation + footsteps
   var moving = dir !== 0 && player.onGround;
@@ -795,6 +1063,8 @@ function updatePlayer(dt) {
 
 // ─── hazards ───
 function updateHazards(dt) {
+  if (state.helpPool && player.x > state.helpPool.x + state.helpPool.w + 120) { state.helpPool = null; state.helpPoolN = 0; }
+  if (state.helpMonN && player.x > MONSTER.max + 120) state.helpMonN = 0;
   // patrolling lava monster
   state.monsterX += state.monsterDir * MONSTER.speed * dt;
   if (state.monsterX >= MONSTER.max) { state.monsterX = MONSTER.max; state.monsterDir = -1; }
@@ -819,20 +1089,35 @@ function updateHazards(dt) {
   if (hitMonster) bounceFromMonster();
 }
 function startLavaBounce(pool) {
-  closeBubble(); bounceHint.bump(); state.bounce = ZackyShared.startBounce(player, pool, BOUNCE1); state.bounce.face = -state.bounce.side;   // he lands still facing the pool, so Space hops him on across it
+  if (state.helpPool === pool) state.helpPoolN++;
+  else { state.helpPool = pool; state.helpPoolN = 1; }
+  var far = state.helpPoolN >= 3;
+  closeBubble(); bounceHint.bump();
+  state.bounce = ZackyShared.startBounce(player, pool, Object.assign({}, BOUNCE1, { far: far }));
+  state.bounce.face = -state.bounce.side;   // he lands still facing the pool
   state.bounces = (state.bounces || 0) + 1;
+  if (far) { state.helpPool = null; state.helpPoolN = 0; }
   playBoing();
 }
 const MONSTER_BOUNCE = { push: 250, dur: 0.7, arc: 60, pause: 0.4 };   // a monster touch: a soft hop 250px backwards, no respawn, no flash
 function bounceFromMonster() {                           // the lava monster: a soft bounce away from it (the same hop as the lava), Zacky keeps playing
   state.deaths++;                                       // counts the touches (tests and stats), it costs nothing
   closeBubble(); bounceHint.bump();
-  var away = state.monsterSide || -1;                    // back to the side he came from (a hop that crosses the monster's middle used to push him forward, onto the door)
-  var tx = Math.min(BOUNCE.maxX, Math.max(BOUNCE.minX, player.x + away * MONSTER_BOUNCE.push));
-  if (away > 0) tx = Math.min(tx, DOOR.x - DOOR_REACH - 10);   // from the far side it must not push him onto the door either
+  state.helpMonN = (state.helpMonN || 0) + 1;
+  var over = state.helpMonN >= 3;                        // 3rd touch in a row: hop over to the door side
+  var away = over ? 1 : (state.monsterSide || -1);       // back to the side he came from, unless the helper sends him over
+  var tx;
+  if (over) {
+    tx = Math.max(state.monsterX, MONSTER.max) + MONSTER.w / 2 + HALF_W + 40;
+    tx = Math.min(BOUNCE.maxX, Math.max(BOUNCE.minX, tx));
+    state.helpMonN = 0;
+  } else {
+    tx = Math.min(BOUNCE.maxX, Math.max(BOUNCE.minX, player.x + away * MONSTER_BOUNCE.push));
+    if (away > 0) tx = Math.min(tx, DOOR.x - DOOR_REACH - 10);   // from the far side it must not push him onto the door either
+  }
   var pool = ZackyShared.findLavaPool({ x: tx, y: FLOOR_Y }, POOLS, { halfW: HALF_W, edge: LAVA_EDGE, surfaceY: POOL_SURFACE });
   if (pool) tx = away < 0 ? pool.x + pool.w + BOUNCE.clearance : pool.x - BOUNCE.clearance;   // never land in lava: stop just outside the pool
-  state.bounce = { t: 0, dur: MONSTER_BOUNCE.dur, arc: MONSTER_BOUNCE.arc, x0: player.x, y0: player.y, x1: tx, y1: FLOOR_Y, side: away, face: -away };
+  state.bounce = { t: 0, dur: MONSTER_BOUNCE.dur, arc: over ? 140 : MONSTER_BOUNCE.arc, x0: player.x, y0: player.y, x1: tx, y1: FLOOR_Y, side: away, face: over ? 1 : -away };
   player.invuln = MONSTER_BOUNCE.pause;                 // a short pause after landing so the same touch cannot catch him twice
   playBoing();
 }
@@ -848,7 +1133,9 @@ function renderZacky() {
   // drawn 148x222 with an offset that lines its body up with the stand pose (measured from the alpha channels).
   var jump = player.pose === 'Zacky_jump.png';
   if (zackyEl.dataset.j !== String(jump)) { zackyEl.dataset.j = String(jump); zackyEl.style.width = jump ? '148px' : '133px'; zackyEl.style.height = jump ? '222px' : '200px'; }
-  zackyEl.style.transform = 'translate(' + (player.x - 66) + 'px,' + (player.y - 166) + 'px) scale(' + (player.face * ZACKY_SCALE) + ',' + ZACKY_SCALE + ') translate(' + (jump ? -13 : 0) + 'px,' + (jump ? -4 : 0) + 'px)';
+  var wobble = zackyEl.classList.contains('stumbleB') ? ' rotate(-14deg)' : '';
+  var shake = (typeof stateB !== 'undefined' && stateB.endShake) ? ' translate(' + stateB.endShake.toFixed(1) + 'px,0)' : '';
+  zackyEl.style.transform = 'translate(' + (player.x - 66) + 'px,' + (player.y - 166) + 'px) scale(' + (player.face * ZACKY_SCALE) + ',' + ZACKY_SCALE + ') translate(' + (jump ? -13 : 0) + 'px,' + (jump ? -4 : 0) + 'px)' + wobble + shake;
 }
 
 
@@ -859,7 +1146,7 @@ const L2_POOLS = [{ x: 520, w: 400 }, { x: 1280, w: 400 }];       // 400px wide:
 const L2_CHECKPOINTS = [{ x: 100, flagX: 210 }, { x: 415, flagX: 455 }, { x: 1105, flagX: 1128 }];   // spawn; just after the blaster (before pool 1 and monster 1); the safe gap between monsters 1 and 2. The flag stands beside the respawn spot, never on Zacky's face
 const L2_DOOR = { x: 1845, h: 210 };
 const L2_GEMS = [{ x: 390, y: 520 }, { x: 1000, y: 520 }, { x: 1130, y: 520 }, { x: 1240, y: 520 }, { x: 1780, y: 540, reach: 150 }];   // hang above head height: a small hop collects them (a gem at 600 was picked up just by standing)
-const L2_PUP = { x: 330, h: 190, talk: 100 };                      // Biscuit waits on the first patch; Enter talks within 'talk' px of him until Zacky has the blaster, then Enter always splashes
+const L2_PUP = { x: 330, h: 190, talk: 100 };                      // Biscuit waits on the first patch; Space or Enter talks within 'talk' px of him until Zacky has the blaster, then they always splash
 const L2_BLASTER = { x: 170, reach: 60 };                         // on the path near the start; walking into it picks it up (horizontal only, so a hop can't skip it)
 const L2_POSES_PLAIN = { stand: 'Zacky_stand.png', walk: 'Zacky_walking.png', jump: 'Zacky_jump.png' };
 const L2_POSES_BLASTER = { stand: 'Zacky_blaster.png', walk: 'Zacky_blaster_walk.png', jump: 'Zacky_blaster.png' };   // no blaster jump pose yet: the standing one is used in the air (optional asset Zacky_blaster_jump.png)
@@ -900,7 +1187,7 @@ function setRig(platforms, poses, speed) { curPlatforms = platforms; curPoses = 
   });
   add('friendly_character.png', L2_PUP.x - 66, FLOOR_Y + 6 - L2_PUP.h, null, 'pup', 5).style.height = L2_PUP.h + 'px';
   bubble2El = add('friend_speech.png', L2_PUP.x - 70, 215, 500, 'bubble', 30); bubble2El.style.display = 'none';
-  tip2El = document.createElement('div'); tip2El.className = 'abs tip'; tip2El.textContent = 'Press Enter';
+  tip2El = document.createElement('div'); tip2El.className = 'abs tip'; tip2El.textContent = 'Press Space';
   tip2El.style.cssText = 'left:' + L2_PUP.x + 'px;top:' + (FLOOR_Y - L2_PUP.h - 50) + 'px;display:none'; world2El.appendChild(tip2El);
   blasterEl = add('water_blaster.png', L2_BLASTER.x - 60, FLOOR_Y - 85, 120, 'blaster', 6);
   L2_GEMS.forEach(function (g) { gem2Els.push(add('gem.png', g.x - 27, g.y - 32, 54, 'gem', 6)); });
@@ -950,31 +1237,41 @@ function updatePup2(dt) {
 function level2Key(key, isRepeat) {
   if (state2.finished) return;
   if (ZackyShared.isJumpKey(key)) { ZackyShared.pressJump(player); bounceHint.clear(); }
-  if (key === 'Enter') { if (nearPup2() && !state2.hasBlaster) talkToPup2(); else if (!isRepeat) spray2(); }       // next to Biscuit Enter talks only while Zacky is unarmed; holding Enter never repeats a spray
+  if (ZackyShared.isShootKey(key)) { if (nearPup2() && !state2.hasBlaster) talkToPup2(); else if (!isRepeat) spray2(); }   // next to Biscuit, Space or Enter talks only while Zacky is unarmed; held spray is applied from keys[] in the frame loop
 }
 const BLOB_W = 58, BLOB_LIFE = 1920;                              // a blob travels about one screen width, then vanishes
 var BLOB_GROUND_Y = FLOOR_Y - 70, BLOB_DROP = 1400;           // the height of a splash sprayed standing up, and how fast a higher one falls to it (px/s)
-function spray2() {
-  if (!state2.hasBlaster || state2.sprayCd > 0 || blobs2.length >= L2_CFG.maxBlobs) return;
-  state2.sprayCd = L2_CFG.sprayCooldown; state2.sprayed = true; state2.fired++; if (/splash/.test(state2.hintHtml)) state2.hintT = 0;
+const blobs1 = [];
+const l1Spray = { blobs: blobs1, armed: true, maxBlobs: 12, life: 1, vol: 0.35, gap: null, world: worldEl, st: state };
+function sprayBlob(st, hitFn) {                            // shared splash: st.armed / st.maxBlobs / st.gap / st.life / st.vol / st.world / st.st (cd + fired). Level 1 passes no hitFn.
+  var bag = st.st || st;
+  if (st.armed === false) return;
+  if (bag.sprayCd > 0 || st.blobs.length >= st.maxBlobs) return;
+  bag.sprayCd = st.gap || ZackyShared.FIRE_GAP; bag.sprayed = true; bag.fired = (bag.fired || 0) + 1;
+  if (st.onSpray) st.onSpray();
   var e = document.createElement('img'); e.src = 'water_blob.png'; e.alt = ''; e.className = 'abs blob';
   e.style.cssText = 'width:' + BLOB_W + 'px;z-index:7;left:0;top:0';
-  world2El.appendChild(e);
-  var b = { x: player.x + player.face * 70, y: player.y - 70, dir: player.face, travel: 0, el: e };      // muzzle of the blaster
-  blobs2.push(b); drawBlob(b); sfx(document.getElementById('sprayAudio'), 0.7);
+  st.world.appendChild(e);
+  var b = { x: player.x + player.face * 70, y: player.y - 70, dir: player.face, travel: 0, age: 0, el: e };
+  st.blobs.push(b); drawBlob(b); sfx(document.getElementById('sprayAudio'), st.vol == null ? 0.7 : st.vol);
 }
-function drawBlob(b) { b.el.style.transform = 'translate(' + (b.x - BLOB_W / 2) + 'px,' + (b.y - 40) + 'px)'; }
-function removeBlob(b) { var i = blobs2.indexOf(b); if (i >= 0) blobs2.splice(i, 1); b.el.remove(); }
-function updateBlobs2(dt) {
-  if (state2.sprayCd > 0) state2.sprayCd -= dt;
-  blobs2.slice().forEach(function (b) {
-    var d = L2_CFG.blobSpeed * dt; b.x += b.dir * d; b.travel += d;
-    if (b.y < BLOB_GROUND_Y) b.y = Math.min(BLOB_GROUND_Y, b.y + BLOB_DROP * dt);   // sprayed mid-jump: the splash drops to pool/monster height, so it still hits them
-    if (blobHits2(b)) { removeBlob(b); return; }
-    if (b.travel > BLOB_LIFE || b.x < -BLOB_W || b.x > 1920 + BLOB_W) { removeBlob(b); return; }
+function drawBlob(b) { var w = b.w || BLOB_W; b.el.style.transform = 'translate(' + (b.x - w / 2) + 'px,' + (b.y - 40 * w / BLOB_W) + 'px)'; }
+function removeBlob(b, arr) { if (!arr || typeof arr.indexOf !== 'function') arr = blobs2; var i = arr.indexOf(b); if (i >= 0) arr.splice(i, 1); b.el.remove(); }
+function updateBlobs(st, dt, hitFn) {
+  var bag = st.st || st;
+  if (bag.sprayCd > 0) bag.sprayCd -= dt;
+  st.blobs.slice().forEach(function (b) {
+    var d = (st.speed || L2_CFG.blobSpeed) * dt; b.x += b.dir * d; b.travel += d; b.age = (b.age || 0) + dt;
+    if (b.y < BLOB_GROUND_Y) b.y = Math.min(BLOB_GROUND_Y, b.y + BLOB_DROP * dt);
+    if (hitFn && hitFn(b)) { removeBlob(b, st.blobs); return; }
+    if ((st.life && b.age >= st.life) || b.travel > (st.maxTravel || BLOB_LIFE) || b.x < -BLOB_W || b.x > 1920 + BLOB_W) { removeBlob(b, st.blobs); return; }
     drawBlob(b);
   });
 }
+function spray2() {
+  sprayBlob({ blobs: blobs2, world: world2El, armed: state2.hasBlaster, maxBlobs: L2_CFG.maxBlobs, speed: L2_CFG.blobSpeed, vol: 0.7, gap: L2_CFG.sprayCooldown, st: state2, onSpray: function () { if (state2.hintT > 0) state2.hintT = 0; } }, blobHits2);
+}
+function updateBlobs2(dt) { updateBlobs({ blobs: blobs2, world: world2El, speed: L2_CFG.blobSpeed, maxTravel: BLOB_LIFE, st: state2 }, dt, blobHits2); }
 function updateHazards2(dt) {
   L2_CHECKPOINTS.forEach(function (c, i) {
     if (i > state2.checkpoint && Math.abs(player.x - c.x) < 60) {
@@ -1054,7 +1351,7 @@ function showHint2(html, secs) { state2.hintHtml = html; state2.hintT = secs; }
 function pickUpBlaster() {
   state2.hasBlaster = true; blasterEl.style.display = 'none'; curPoses = L2_POSES_BLASTER;
   sfx(document.getElementById('pickupSfx'), 0.8);
-  if (L2_CFG.hintOn) showHint2('Press <span class="keycap">Enter</span> to splash!', 6);
+  if (L2_CFG.hintOn) showHint2('<span class="keycap wide space-pic" aria-hidden="true"><span class="drop"></span></span>', 6);
 }
 function finishLevel2() {
   state2.finished = true;
@@ -1075,8 +1372,9 @@ function renderLevel2() {
 var lastT = 0;
 function frame(t) {
   var dt = Math.min(0.033, (t - lastT) / 1000 || 0); lastT = t;
-  if (stage === 'level1') { if (!state.finished) { if (state.bounce) updateBounce(dt); else updatePlayer(dt); updateHazards(dt); updateItems(dt); } render(); }
-  else if (stage === 'level2') { if (!state2.finished) { if (state2.bounce) updateBounce(dt, state2); else updatePlayer(dt); updateHazards2(dt); updateItems2(dt); updateBlobs2(dt); }  updateMonsters2(state2.finished ? 0 : dt); renderLevel2(); }
+  if (stage === 'level1') { if (!state.finished) { if (ZackyShared.SHOOT_KEYS.some(function (k) { return keys[k]; })) sprayBlob(l1Spray, null); if (state.bounce) updateBounce(dt); else updatePlayer(dt); updateHazards(dt); updateItems(dt); updateBlobs(l1Spray, dt, null); } render(); }
+  else if (stage === 'level2') { if (!state2.finished) { if (ZackyShared.SHOOT_KEYS.some(function (k) { return keys[k]; })) spray2(); if (state2.bounce) updateBounce(dt, state2); else updatePlayer(dt); updateHazards2(dt); updateItems2(dt); updateBlobs2(dt); }  updateMonsters2(state2.finished ? 0 : dt); renderLevel2(); }
+  else if (stage === 'boss') bossFrame(dt);
   else if (stage === 'level3') level3Frame(dt);
   else if (!walkSfx.paused) walkSfx.pause();
   requestAnimationFrame(frame);
@@ -1097,5 +1395,6 @@ if (/[?&]fps=1(&|$)/.test(location.search)) (function () {
 })();
 </script>
 <script src="level3.js"></script>
+<script src="boss.js"></script>
 </body>
 </html>

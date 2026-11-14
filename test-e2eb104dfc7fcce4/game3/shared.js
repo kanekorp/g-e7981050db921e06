@@ -21,13 +21,15 @@
   };
 
   /* Starts a bounce: Zacky hops out of the pool to its NEAR edge (the side his centre is on), landing on the floor clear of the lava.
-     o: {floorY, clearance, dur, arc, minX, maxX}. clearance = how far outside the pool he lands (must be more than halfW - edge, so the landing can never touch lava again).
+     o: {floorY, clearance, dur, arc, minX, maxX, far}. clearance = how far outside the pool he lands (must be more than halfW - edge, so the landing can never touch lava again).
+     o.far: land on the opposite (far) edge instead — used by the level 1 helping bounce.
      The bounce is a fixed path with a fixed end point: it cannot loop or leave him in the lava. */
   ZS.startBounce = function (p, pool, o) {
     var near = (p.x < pool.x + pool.w / 2) ? -1 : 1;
-    var tx = near < 0 ? pool.x - o.clearance : pool.x + pool.w + o.clearance;
+    var dir = o.far ? -near : near;
+    var tx = dir < 0 ? pool.x - o.clearance : pool.x + pool.w + o.clearance;
     tx = Math.min(o.maxX, Math.max(o.minX, tx));
-    return { t: 0, dur: o.dur, arc: o.arc, x0: p.x, y0: p.y, x1: tx, y1: o.floorY, side: near };
+    return { t: 0, dur: o.dur, arc: o.arc, x0: p.x, y0: p.y, x1: tx, y1: o.floorY, side: dir, far: !!o.far };
   };
 
   /* Moves p along the bounce. Returns true while it is still in the air, false on the frame it lands. */
@@ -43,9 +45,12 @@
 
   /* ─── Forgiving jumps ───
      p carries two timers: p.coyote (time left to still jump after walking off a ledge) and p.jumpBuffer (a jump pressed just before landing still counts).
-     JUMP_KEYS = every key that jumps (space and the up arrow). */
-  ZS.JUMP_KEYS = [' ', 'ArrowUp'];
+     JUMP_KEYS = every key that jumps (the up arrow). SHOOT_KEYS = Space and Enter (talk, splash or shoot). */
+  ZS.JUMP_KEYS = ['ArrowUp'];
   ZS.isJumpKey = function (k) { return ZS.JUMP_KEYS.indexOf(k) >= 0; };
+  ZS.SHOOT_KEYS = [' ', 'Enter'];
+  ZS.isShootKey = function (k) { return ZS.SHOOT_KEYS.indexOf(k) >= 0; };
+  ZS.FIRE_GAP = 0.35;   // one splash every 0.35s everywhere: a tap is one, holding repeats at this gap
   ZS.GRACE = { coyote: 0.12, buffer: 0.12, landPad: 14 };   // seconds / seconds / px added each side of a platform when landing
   ZS.pressJump = function (p) { p.jumpBuffer = ZS.GRACE.buffer; };
   /* call once per frame BEFORE moving. Returns true when the jump should start this frame (the caller then sets vy and onGround=false). */
