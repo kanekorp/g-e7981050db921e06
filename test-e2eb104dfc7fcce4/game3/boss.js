@@ -242,8 +242,8 @@ function unlockFight() {                                                   // co
   stateB.lastSplash = stateB.t;
   stateB.lastHit = stateB.t;
   stateB.fightT = 0;
-  stateB.throwCd = L_BOSS_CFG.phase4ArcEveryS;
   stateB.phase2N = 0;
+  startRoundB(1);
   stateB.helping = false; stateB.helpStage = '';
   treeBhot.style.transform = treeBfriendly.style.transform = '';
   barB.classList.remove('on');
@@ -302,17 +302,23 @@ function flameOutFx() {
 function treeHitB() {                                                          // one blob, or a test helper; the bar never refills
   var cap = L_BOSS_CFG.flames * L_BOSS_CFG.hitsPerFlame;
   if ((stateB.hits || 0) >= cap) return;
+  if (!stateB.roundOpen) return;
   var before = flamesOutB();
   stateB.hits = (stateB.hits || 0) + 1;
   stateB.lastHit = stateB.t;
   paintBarB(); paintTreeFade();
-  if (flamesOutB() > before) { flameOutFx(); if (remainingFlamesB() <= 0) startEndingB(); }
+  if (flamesOutB() > before) {
+    flameOutFx();
+    if (remainingFlamesB() <= 0) startEndingB();
+    else startRoundB((stateB.round || 1) + 1);
+  }
 }
 function clearRocksB() {
   rocksB.slice().forEach(removeRockB);
 }
 function removeRockB(r) {
   if (!r) return;
+  accountRoundRockB(r);
   if (r.el && r.el.parentNode) r.el.remove();
   if (r.shadow && r.shadow.parentNode) r.shadow.remove();
   var i = rocksB.indexOf(r); if (i >= 0) rocksB.splice(i, 1);
@@ -366,7 +372,7 @@ function spawnRollRockB(startX) {
   var w = L_BOSS_CFG.rollW, h = Math.round(w * 133 / 150);
   var el = document.createElement('img'); el.src = 'lava_rock_small.png'; el.alt = ''; el.className = 'rockB'; el.setAttribute('data-kind', 'roll');
   worldB.appendChild(el);
-  var r = { kind: 'roll', cooled: false, landed: false, t: 0, x: (startX == null) ? treeLeftB() : startX, y: FLOOR_Y, w: w, h: h, el: el, vx: -L_BOSS_CFG.rollSpeed };
+  var r = { kind: 'roll', cooled: false, landed: false, t: 0, x: (startX == null) ? treeLeftB() : startX, y: FLOOR_Y, w: w, h: h, el: el, vx: -roundSpeedB() };
   rocksB.push(r);
   sfx(document.getElementById('rockLaunchSfx'), 0.4);
   placeRockB(r);
@@ -374,14 +380,11 @@ function spawnRollRockB(startX) {
 }
 function coolRockB(r) {
   if (!r || r.cooled) return;
-  r.cooled = true; r.landed = true; r.vx = 0; r.kind = 'pebble';
-  r.el.src = 'lava_rock_small.png'; r.el.classList.add('pebbleB'); r.el.setAttribute('data-kind', 'pebble');
-  r.w = L_BOSS_CFG.pebbleW; r.h = Math.round(r.w * 133 / 150); r.y = FLOOR_Y;
-  if (r.shadow && r.shadow.parentNode) r.shadow.remove();
-  r.shadow = null;
-  placeRockB(r);
+  r.cooled = true; r.landed = true; r.vx = 0;
+  accountRoundRockB(r);
   sfx(hissSfx, 0.6);
   stateB.lastFizz = stateB.t;
+  removeRockB(r);
 }
 function blobCoolsRockB(b) {
   var i, r, bw = (b.w || BLOB_W) * 0.5;
@@ -400,7 +403,7 @@ function rockTouchesZackyB(r) {
   var rl = r.x - r.w * 0.45, rr = r.x + r.w * 0.45, rt = r.y - r.h * 0.85, rb = r.y;
   return right > rl && l < rr && bot > rt && top < rb;
 }
-function hopFromRockB() {                                                     // level 1 soft hop back along the fixed startBounce path
+function hopFromRockB(r) {                                                    // soft hop back; that rock is removed so he is never pinned
   if (stateB.bounce || player.invuln > 0) return;
   var o = Object.assign({}, BOUNCE1, { minX: HALF_W + 12, maxX: L_BOSS_CFG.walkMax });
   var push = L_BOSS_CFG.hopPush;
@@ -412,6 +415,7 @@ function hopFromRockB() {                                                     //
   player.invuln = L_BOSS_CFG.safeS;
   zackyEl.classList.add('stumbleB', 'blink');
   sfx(document.getElementById('whoopsSfx'), 0.8);
+  if (r) removeRockB(r);
 }
 function throwPhaseB() {
   var rem = remainingFlamesB();
@@ -423,11 +427,32 @@ function landShortB() { return (stateB.rockHits || 0) >= L_BOSS_CFG.kindShortAft
 function liveRocksB() {
   return rocksB.filter(function (r) { return !r.cooled && !((r.kind === 'arc' || r.kind === 'arc-small') && r.landed) && r.kind !== 'pebble'; }).length;
 }
+function roundCountB() {
+  var counts = L_BOSS_CFG.roundCounts || [3, 4, 5], i = (stateB.round || 1) - 1;
+  return counts[Math.max(0, Math.min(i, counts.length - 1))];
+}
+function roundSpeedB() {
+  var speeds = L_BOSS_CFG.roundSpeeds || [200, 280, 360], i = (stateB.round || 1) - 1;
+  return speeds[Math.max(0, Math.min(i, speeds.length - 1))];
+}
+function startRoundB(n) {
+  stateB.round = n;
+  stateB.roundThrown = 0;
+  stateB.roundGone = 0;
+  stateB.roundOpen = false;
+  stateB.throwCd = L_BOSS_CFG.rollEveryS;
+}
+function accountRoundRockB(r) {
+  if (!r || r.counted) return;
+  r.counted = true;
+  stateB.roundGone = (stateB.roundGone || 0) + 1;
+  if ((stateB.roundThrown || 0) >= roundCountB() && (stateB.roundGone || 0) >= roundCountB()) stateB.roundOpen = true;
+}
 function canThrowB() {
   if (stateB.phase !== 'fight') return false;
-  if ((stateB.fightT || 0) >= L_BOSS_CFG.throwStopS) return false;
   if (remainingFlamesB() <= 0) return false;
-  if (oneRockOnlyB() && liveRocksB() > 0) return false;
+  if (stateB.roundOpen) return false;
+  if ((stateB.roundThrown || 0) >= roundCountB()) return false;
   return true;
 }
 function aimArcX(offset) {
@@ -459,26 +484,9 @@ function throwTickB(dt) {
   stateB.fightT = (stateB.fightT || 0) + dt;
   stateB.throwCd = (stateB.throwCd || 0) - dt;
   if (stateB.throwCd > 0 || !canThrowB()) return;
-  var rem = remainingFlamesB(), r, i, made = 0, n, spread;
-  if (rem >= 3) {
-    r = spawnArcRockB(aimArcX()); scaleRockB(r);
-    stateB.throwCd = L_BOSS_CFG.phase4ArcEveryS;
-  } else if (rem >= 2) {
-    stateB.phase2N = (stateB.phase2N || 0) + 1;
-    if ((stateB.phase2N % L_BOSS_CFG.phase2ArcEvery) === 0) { r = spawnArcRockB(aimArcX()); scaleRockB(r); }
-    else { r = spawnRollRockB(); scaleRockB(r); }
-    stateB.throwCd = L_BOSS_CFG.phase2EveryS;
-  } else if (rem === 1) {
-    n = L_BOSS_CFG.phase1Rocks; spread = L_BOSS_CFG.phase1Spread;
-    for (i = 0; i < n; i++) {
-      if (oneRockOnlyB() && (liveRocksB() > 0 || made > 0)) break;
-      r = spawnArcRockB(aimArcX((i - (n - 1) / 2) * spread));
-      r.w = L_BOSS_CFG.rollW; r.h = Math.round(r.w * 133 / 150);
-      r.el.src = 'lava_rock_small.png'; r.el.setAttribute('data-kind', 'arc-small'); r.kind = 'arc-small';
-      scaleRockB(r); placeRockB(r); made++;
-    }
-    stateB.throwCd = L_BOSS_CFG.phase1EveryS;
-  }
+  spawnRollRockB();
+  stateB.roundThrown = (stateB.roundThrown || 0) + 1;
+  stateB.throwCd = L_BOSS_CFG.rollEveryS;
 }
 function biscuitHelpB() {
   var cap = L_BOSS_CFG.flames * L_BOSS_CFG.hitsPerFlame;
@@ -529,7 +537,7 @@ function updateRocksB(dt) {
       if (r.x < -r.w) { removeRockB(r); return; }
       placeRockB(r);
     } else placeRockB(r);
-    if (!stateB.bounce && player.invuln <= 0 && rockTouchesZackyB(r)) hopFromRockB();
+    if (!stateB.bounce && player.invuln <= 0 && rockTouchesZackyB(r)) { hopFromRockB(r); return; }
   });
 }
 function treeLeftB() { return L_BOSS_CFG.treeX - Math.round(640 * L_BOSS_CFG.treeH / 900) / 2; }
@@ -545,13 +553,10 @@ function updateBlobsB(dt) {
     } else {
       if (blobCoolsRockB(b)) { leavePuddle(b.x); removeBlob(b, blobsB); return; }
       var reach = b.x + (b.w || BLOB_W) / 2 >= treeLeftB();
-      var inRange = (b.sx == null ? player.x : b.sx) >= L_BOSS_CFG.rangeMinX;
-      var hit = reach && inRange;
-      var miss = reach && !inRange;
       var land = b.y >= ground - 0.5 && (reach || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W);
-      if (hit || miss || land || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W) {
+      if (reach || land || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W) {
         leavePuddle(reach ? Math.min(b.x, treeLeftB() - 40) : b.x);
-        if (hit) treeHitB();
+        if (reach) treeHitB();
         removeBlob(b, blobsB);
         return;
       }

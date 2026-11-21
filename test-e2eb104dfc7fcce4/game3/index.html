@@ -395,7 +395,7 @@ const L2_DEFAULTS = {
   hitsToCoolMonster: 1,      // water hits to cool one monster
   hitsToCoolPool: 1,         // water hits to turn one lava pool into a rock bridge
   blobSpeed: 520,            // px/s, a slow big blob
-  maxBlobs: 12,              // on screen at once (high enough that the 1.8s rate is never capped)
+  maxBlobs: 12,              // on screen at once (high enough that the 1.2s rate is never capped)
   sprayCooldown: ZackyShared.FIRE_GAP,  // follows the shared fire rate; a test config may override
   hintOn: true               // picture hint (Space-key, no words) after the blaster is picked up
 };
@@ -498,10 +498,10 @@ const L_BOSS_DEFAULTS = {
   hintWaitS: 8,                // hint returns if there's no splash for this long
   maxBlobs: 8,
   blobScale: 1,                // level-2 blaster blob size (no Super Splasher)
-  rangeMinX: 1000,             // shots fired from the left of this miss the tree
+  rangeMinX: 0,                // unused: shots from the left can hit rocks (and the tree when they reach it)
   maxPuddles: 40,              // looks only; oldest puddle goes when the cap is hit
   flames: 3,
-  hitsPerFlame: 3,             // 9 hits in all
+  hitsPerFlame: 1,             // one tree hit puts a flame out (one hit per cleared round)
   flameAnchors: [              // offsets from the tree's foot centre (treeX, floor)
     { x: -78, y: -248 },
     { x: 6, y: -302 },
@@ -515,7 +515,10 @@ const L_BOSS_DEFAULTS = {
   arcH: 220,                   // peak of the throw
   arcW: 140,                   // drawn size of a big arcing rock
   rollW: 90,                   // small rolling rock (a jump clears it)
-  rollSpeed: 200,
+  rollSpeed: 200,               // round 1 speed; rounds use roundSpeeds
+  rollEveryS: 1.05,            // short stagger between rolling throws (~0.9-1.2s)
+  roundCounts: [3, 4, 5],
+  roundSpeeds: [200, 280, 360],
   pebbleW: 72,
   phase4ArcEveryS: 2.5,        // 3 flames left: one slow arcing rock
   phase2EveryS: 2.8,           // 2 flames left: a rolling rock (or the odd arc)
