@@ -31,14 +31,26 @@ const treeBhot = document.getElementById('treeBhot'), treeBfriendly = document.g
 const glowB = document.getElementById('glowB'), uhOhB = document.getElementById('uhOhB'), whiteB = document.getElementById('whiteB');
 const blobsB = [], puddlesB = [], rocksB = [];
 const barB = document.getElementById('barB');
-(function buildBarB() {
-  barB.innerHTML = '';
-  var i, im;
+var flamesB = document.getElementById('flamesB');
+(function buildFlamesB() {
+  if (!flamesB) { flamesB = document.createElement('div'); flamesB.id = 'flamesB'; worldB.appendChild(flamesB); }
+  flamesB.innerHTML = '';
+  var i, im, a, anchors = L_BOSS_CFG.flameAnchors || [];
   for (i = 0; i < L_BOSS_CFG.flames; i++) {
-    im = document.createElement('img'); im.src = 'assets/level-boss/flame_icon.png'; im.alt = '';
-    barB.appendChild(im);
+    a = anchors[i] || { x: (i - 1) * 80, y: -L_BOSS_CFG.treeH * 0.65 };
+    im = document.createElement('img'); im.src = 'assets/level-boss/flame_icon.png'; im.alt = ''; im.className = 'flameB';
+    im.style.left = (L_BOSS_CFG.treeX + a.x) + 'px';
+    im.style.top = (FLOOR_Y + a.y) + 'px';
+    flamesB.appendChild(im);
   }
+  flamesB.style.display = 'none';
+  if (barB) { barB.innerHTML = ''; barB.setAttribute('data-count', String(L_BOSS_CFG.flames)); barB.setAttribute('data-hits', '0'); }
 })();
+function flameElsB() { return flamesB ? flamesB.querySelectorAll('.flameB') : []; }
+function flameAnchorB(i) {
+  var a = (L_BOSS_CFG.flameAnchors || [])[i] || { x: 0, y: -L_BOSS_CFG.treeH * 0.5 };
+  return { x: L_BOSS_CFG.treeX + a.x, y: FLOOR_Y + a.y };
+}
 
 /* ── boss music: Web Audio loop, trimmed to 64s so the 26ms mp3 pad does not gap ── */
 var bossAudioCtx = null, bossMusicBuf = null, bossMusicAb = null, bossMusicSrc = null, bossWantMusic = false;
@@ -137,6 +149,7 @@ function leavePuddle(x, kind) {                                          // look
 function resetBoss() {
   stateB.t = 0; stateB.phase = 'intro'; stateB.fired = 0; stateB.sprayCd = 0;
   stateB.armed = false; stateB.woke = false; stateB.pfft = false; stateB.pfftMaxX = 0; stateB.swapped = false;
+  stateB.tipped = false; stateB.tipAt = 0;
   stateB.hintOn = false; stateB.lastSplash = 0; stateB.pupX = -80; stateB.gunCarried = false;
   stateB.hits = 0; stateB.flameOuts = 0; stateB.lastHit = 0;
   stateB.bounce = null; stateB.rockHits = 0; stateB.lastFizz = 0; stateB.whoops = false;
@@ -155,7 +168,7 @@ function resetBoss() {
   if (uhOhB) uhOhB.classList.remove('on');
   if (whiteB) whiteB.style.opacity = '0';
   var rs = document.getElementById('rumbleSfx'); if (rs) { try { rs.pause(); rs.currentTime = 0; } catch (e) {} }
-  barB.classList.remove('on'); paintBarB();
+  barB.classList.remove('on'); if (flamesB) flamesB.style.display = 'none'; paintBarB();
   Array.prototype.slice.call(worldB.querySelectorAll('.sparkB, .steamB, .dropB, .helpSquirtB')).forEach(function (e) { e.remove(); });
   playBossMusic();
   renderZacky();
@@ -207,25 +220,46 @@ function showHintB(on) {
   hintB.style.top = (FLOOR_Y - 230) + 'px';
   hintB.classList.toggle('on', stateB.hintOn);
 }
-function endIntro() {
+function showBiscuitTip() {
+  curPoses = L_BOSS_POSES_BLASTER;
+  if (!zackyEl.src || zackyEl.src.indexOf('Zacky_super') >= 0) { zackyEl.src = curPoses.stand; player.pose = curPoses.stand; }
+  gunB.style.display = 'none';
+  placePup(L_BOSS_CFG.biscuitX);
+  showHintB(true);
+  if (flamesB) flamesB.style.display = '';
+  paintBarB();
+  if (!stateB.tipped) { stateB.tipped = true; stateB.tipAt = stateB.t; }
+}
+function unlockFight() {                                                   // controls unlock only after the tip has been shown
   if (stateB.phase === 'fight') return;
+  if (!stateB.tipped) showBiscuitTip();
   stateB.phase = 'fight';
+  stateB.armed = true;
+  stateB.swapped = false;
   player.y = FLOOR_Y; player.vy = 0; player.onGround = true; player.vx = 0;
   if (player.x < L_BOSS_CFG.introEndX) player.x = L_BOSS_CFG.introEndX;
-  if (!stateB.woke) wakeTree();
-  if (!stateB.swapped) swapToSuper();
-  placePup(L_BOSS_CFG.biscuitX);
-  gunB.style.display = 'none';
   clearBlobsB();
-  showHintB(true);
   stateB.lastSplash = stateB.t;
-  stateB.lastHit = stateB.t;                                          // the 20s Biscuit clock starts when the fight does
+  stateB.lastHit = stateB.t;
   stateB.fightT = 0;
   stateB.throwCd = L_BOSS_CFG.phase4ArcEveryS;
   stateB.phase2N = 0;
   stateB.helping = false; stateB.helpStage = '';
   treeBhot.style.transform = treeBfriendly.style.transform = '';
-  barB.classList.add('on'); paintBarB(); paintTreeFade();
+  barB.classList.remove('on');
+  if (flamesB) flamesB.style.display = '';
+  paintBarB(); paintTreeFade();
+}
+function startFightB() { showBiscuitTip(); unlockFight(); }                 // test helper: tip is on, then controls unlock at once
+function endIntro() {                                                      // walk-in is done: Biscuit's tip first, controls wait tipUnlockS
+  if (stateB.phase === 'fight') return;
+  if (!stateB.woke) wakeTree();
+  player.y = FLOOR_Y; player.vy = 0; player.onGround = true; player.vx = 0;
+  if (player.x < L_BOSS_CFG.introEndX) player.x = L_BOSS_CFG.introEndX;
+  if (!walkSfx.paused) walkSfx.pause();
+  gunB.style.display = 'none';
+  showBiscuitTip();
+  if (stateB.phase !== 'tip' && stateB.phase !== 'fight') stateB.phase = 'tip';
 }
 function sprayB() {
   if (!stateB.armed || stateB.phase !== 'fight') return;
@@ -247,13 +281,15 @@ function paintTreeFade() {
   treeBhot.style.opacity = String(1 - k);
 }
 function paintBarB() {
-  var out = flamesOutB(), imgs = barB.querySelectorAll('img'), i;
+  var out = flamesOutB(), imgs = flameElsB(), i;
   for (i = 0; i < imgs.length; i++) imgs[i].classList.toggle('out', i >= L_BOSS_CFG.flames - out);   // rightmost flame goes first
-  barB.setAttribute('data-count', String(remainingFlamesB()));
-  barB.setAttribute('data-hits', String(stateB.hits || 0));
+  if (flamesB) { flamesB.setAttribute('data-count', String(remainingFlamesB())); flamesB.setAttribute('data-hits', String(stateB.hits || 0)); }
+  if (barB) { barB.setAttribute('data-count', String(remainingFlamesB())); barB.setAttribute('data-hits', String(stateB.hits || 0)); barB.classList.remove('on'); }
 }
 function flameOutFx() {
-  var x = L_BOSS_CFG.treeX, y = FLOOR_Y - L_BOSS_CFG.treeH * 0.45;
+  var just = L_BOSS_CFG.flames - flamesOutB();                         // the flame that just went out (rightmost first)
+  var a = flameAnchorB(Math.max(0, just));
+  var x = a.x, y = a.y;
   var st = document.createElement('img'); st.src = 'smoke_puff.png'; st.alt = ''; st.className = 'steamB';
   st.style.left = x + 'px'; st.style.top = y + 'px'; worldB.appendChild(st);
   setTimeout(function () { if (st.parentNode) st.remove(); }, 800);
@@ -379,7 +415,7 @@ function hopFromRockB() {                                                     //
 }
 function throwPhaseB() {
   var rem = remainingFlamesB();
-  return rem >= 4 ? 'grumpy' : rem >= 2 ? 'cross' : rem >= 1 ? 'last' : 'done';
+  return rem >= 3 ? 'grumpy' : rem >= 2 ? 'cross' : rem >= 1 ? 'last' : 'done';
 }
 function kindSpeedB() { return (stateB.rockHits || 0) >= L_BOSS_CFG.kindSlowAfter ? L_BOSS_CFG.kindSlowMul : 1; }
 function oneRockOnlyB() { return (stateB.rockHits || 0) >= L_BOSS_CFG.kindOneAfter; }
@@ -424,7 +460,7 @@ function throwTickB(dt) {
   stateB.throwCd = (stateB.throwCd || 0) - dt;
   if (stateB.throwCd > 0 || !canThrowB()) return;
   var rem = remainingFlamesB(), r, i, made = 0, n, spread;
-  if (rem >= 4) {
+  if (rem >= 3) {
     r = spawnArcRockB(aimArcX()); scaleRockB(r);
     stateB.throwCd = L_BOSS_CFG.phase4ArcEveryS;
   } else if (rem >= 2) {
@@ -480,10 +516,8 @@ function stepHelpB(dt) {
     if (stateB.pupX <= L_BOSS_CFG.biscuitX) { stateB.helping = false; stateB.helpStage = ''; }
   }
 }
-function helpTickB(dt) {
-  if (stateB.phase !== 'fight' || remainingFlamesB() <= 0) { if (stateB.helping) stepHelpB(dt); return; }
-  if (stateB.helping) { stepHelpB(dt); return; }
-  if (stateB.t - (stateB.lastHit || 0) >= L_BOSS_CFG.helpAfterS) startHelpB();
+function helpTickB(dt) {                                                   // V4: Biscuit no longer auto-squirts
+  if (stateB.helping) stepHelpB(dt);
 }
 function updateRocksB(dt) {
   rocksB.slice().forEach(function (r) {
@@ -510,10 +544,13 @@ function updateBlobsB(dt) {
       if (b.travel >= L_BOSS_CFG.pfftTravel) { removeBlob(b, blobsB); return; }
     } else {
       if (blobCoolsRockB(b)) { leavePuddle(b.x); removeBlob(b, blobsB); return; }
-      var hit = b.x + (b.w || BLOB_W) / 2 >= treeLeftB();
-      var land = b.y >= ground - 0.5 && (hit || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W);
-      if (hit || land || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W) {
-        leavePuddle(hit ? Math.min(b.x, L_BOSS_CFG.treeX - 40) : b.x);
+      var reach = b.x + (b.w || BLOB_W) / 2 >= treeLeftB();
+      var inRange = (b.sx == null ? player.x : b.sx) >= L_BOSS_CFG.rangeMinX;
+      var hit = reach && inRange;
+      var miss = reach && !inRange;
+      var land = b.y >= ground - 0.5 && (reach || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W);
+      if (hit || miss || land || b.travel > BLOB_LIFE || b.x > 1920 + BLOB_W) {
+        leavePuddle(reach ? Math.min(b.x, treeLeftB() - 40) : b.x);
         if (hit) treeHitB();
         removeBlob(b, blobsB);
         return;
@@ -537,17 +574,8 @@ function introTick(dt) {
     var u = Math.max(0, Math.min(1, (stateB.t - L_BOSS_CFG.wakeAt) / 0.5)), sc = u <= 0 ? 1 : 1 + 0.08 * Math.sin(Math.PI * u);
     treeBhot.style.transform = treeBfriendly.style.transform = 'scale(' + sc.toFixed(3) + ')';
   }
-  if (!stateB.pfft && stateB.t >= L_BOSS_CFG.pfftAt) pfftSplash();
-  if (stateB.t >= L_BOSS_CFG.biscuitAt) {
-    if (pupB.style.display === 'none') { placePup(-80); placeGun(-20, FLOOR_Y - 40, true); }
-    if (stateB.pupX < L_BOSS_CFG.biscuitX) {
-      placePup(Math.min(L_BOSS_CFG.biscuitX, stateB.pupX + L_BOSS_CFG.biscuitSpeed * dt));
-      placeGun(stateB.pupX + 50, FLOOR_Y - 20, true);
-    } else if (gunB.style.display !== 'none' && !stateB.swapped) placeGun(L_BOSS_CFG.gunDropX, FLOOR_Y, false);
-  }
-  if (!stateB.swapped && stateB.t >= L_BOSS_CFG.swapAt) swapToSuper();
-  if (stateB.t >= L_BOSS_CFG.hintAt) showHintB(true);
-  if (stateB.t >= L_BOSS_CFG.introS) endIntro();
+  if (player.x >= dest && !stateB.tipped) endIntro();
+  if (stateB.tipped && stateB.phase !== 'fight' && stateB.t - stateB.tipAt >= L_BOSS_CFG.tipUnlockS) unlockFight();
 }
 function reducedMotionB() {
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -575,7 +603,7 @@ function startEndingB() {
   stateB.clipStarted = false; stateB.boomed = false;
   player.vx = 0; player.vy = 0; player.onGround = true; player.invuln = 99; stateB.bounce = null;
   zackyEl.classList.remove('stumbleB', 'blink');
-  showHintB(false); barB.classList.remove('on');
+  showHintB(false); barB.classList.remove('on'); if (flamesB) flamesB.style.display = 'none';
   clearRocksB();
   stopBossMusic();
   walkSfx.pause();
@@ -637,9 +665,10 @@ function endTickB(dt) {
 }
 function bossKey(key, isRepeat) {
   if (stateB.phase === 'intro') {
-    if (!isRepeat && stateB.t >= L_BOSS_CFG.skipLockS) endIntro();              // after 1s, any fresh key skips
+    if (!isRepeat && stateB.t >= L_BOSS_CFG.skipLockS) endIntro();              // after 1s, any fresh key skips to the tip; controls wait
     return;
   }
+  if (stateB.phase === 'tip') return;                                           // tip is up; wait tipUnlockS
   if (stateB.phase !== 'fight') return;
   if (ZackyShared.isJumpKey(key)) ZackyShared.pressJump(player);
   if (ZackyShared.isShootKey(key) && !isRepeat) sprayB();
@@ -647,6 +676,10 @@ function bossKey(key, isRepeat) {
 function bossFrame(dt) {
   stateB.t += dt;
   if (stateB.phase === 'intro') introTick(dt);
+  else if (stateB.phase === 'tip') {
+    if (!walkSfx.paused) walkSfx.pause();
+    if (stateB.tipped && stateB.t - stateB.tipAt >= L_BOSS_CFG.tipUnlockS) unlockFight();
+  }
   else if (stateB.phase === 'ending') { endTickB(dt); if (!walkSfx.paused) walkSfx.pause(); }
   else if (stateB.phase === 'fight') {
     if (stateB.bounce) {

@@ -920,6 +920,7 @@ function beginRun3() {
   if (clipCrossfading || screenLocked) return;
   state3.phase = 'run';
   ready3.style.display = 'none';
+  if (typeof lockDiscreteInput === 'function') lockDiscreteInput();
   playMusic(chaseMusic); xfAttach(chaseXF, 0.5);                      // the chase tune loops with a crossfade (no gap)
   if (audioUnlocked) xfStart(rumbleXF, l3Vol(L3_CFG.rumbleVolume));   // a loud volcano rumble, kept under the music
   state3.eruptT = 9; eruption3(true);                                  // the volcano erupts as the run starts
@@ -1012,7 +1013,7 @@ function finaleMusic() {                                           // cheer firs
 cheerSfx.addEventListener('ended', finaleMusic);
 document.addEventListener('keyup', function (e) { if (e.key === ' ') finaleHeld = false; });
 window.addEventListener('blur', function () { finaleHeld = false; });
-function endLevel3() {                                             // finale: heading, 4 popping stars, cheer then the title tune; after 3s Enter or a fresh Space goes to the title
+function endLevel3() {                                             // finale: Ali's end art, heading, 4 popping stars, cheer then the title tune; after 3s Enter or a fresh Space returns to the lobby
   var row = document.getElementById('gemRow3'), total = hud3.total;
   row.textContent = '';
   for (var i = 0; i < total; i++) { var im = document.createElement('img'); im.src = 'gem.png'; im.alt = ''; if (i >= state3.gems) im.className = 'miss'; row.appendChild(im); }
@@ -1038,37 +1039,34 @@ function endLevel3() {                                             // finale: he
     }, FINALE_KEY_S * 1000);
   });
 }
-function goTitleFromFinale() {
+var LOBBY_HREF = '../';                                            // same parent landing the live cards use
+function returnToLobby() { location.assign(LOBBY_HREF); }
+function goLobbyFromFinale() {
+  if (typeof inputLocked !== 'undefined' && inputLocked) return;
   clearFinale3();
-  showScreen('title', function () { playMusic(titleMusic); });
+  if (typeof lockDiscreteInput === 'function') lockDiscreteInput();
+  returnToLobby();
 }
 function level3Done3Key(key, isRepeat) {
   if (!finaleReady || isRepeat) return;
-  if (key === 'Enter') { goTitleFromFinale(); return; }
-  if (key === ' ' && !finaleHeld) goTitleFromFinale();
+  if (typeof inputLocked !== 'undefined' && inputLocked) return;
+  if (key === 'Enter') { goLobbyFromFinale(); return; }
+  if (key === ' ' && !finaleHeld) goLobbyFromFinale();
 }
 function level3Key(key, isRepeat) {
   if (state3.phase === 'car' || state3.phase === 'done') return;
   if (state3.phase === 'ready') { if (!isRepeat) beginRun3(); return; }   // any fresh key starts; a key already held is picked up in the frame
   if (state3.phase === 'run' && !isRepeat && ZackyShared.isJumpKey(key)) jump3();          // Up only
-  if (state3.phase === 'run' && ZackyShared.isShootKey(key) && !isRepeat) spray3();        // harmless splash; held repeats from keys[] in the frame
   if (state3.phase === 'run' && !isRepeat && (key === 'ArrowLeft' || key === 'ArrowRight')) changeLane3(key === 'ArrowLeft' ? -1 : 1);
 }
 function clearSplash3() {
   (state3.splashes || []).forEach(function (s) { if (s.el && s.el.parentNode) s.el.remove(); });
   state3.splashes = [];
 }
-function spray3() {                                                            // a harmless splash up the road: touches nothing, gone after 1s
-  if (state3.phase !== 'run' || state3.sprayCd > 0 || (state3.splashes || []).length >= 8) return;
-  state3.sprayCd = ZackyShared.FIRE_GAP;
-  var el = document.createElement('img'); el.src = 'water_blob.png'; el.alt = ''; el.className = 'splash3'; el.width = 58; el.height = 80;
-  document.getElementById('level3').appendChild(el);
-  state3.splashes.push({ el: el, t: 0, lane: state3.lane }); state3.sprayN = (state3.sprayN || 0) + 1;
-  sfx(document.getElementById('sprayAudio'), 0.35);
+function spray3() {                                                            // V6: Space does nothing in the chase
 }
 function updateSplash3(dt) {
   if (state3.sprayCd > 0) state3.sprayCd -= dt;
-  if (state3.phase === 'run' && ZackyShared.SHOOT_KEYS.some(function (k) { return keys[k]; })) spray3();
   var u0 = road3U(L3_SZ);
   (state3.splashes || []).slice().forEach(function (s) {
     s.t += dt;

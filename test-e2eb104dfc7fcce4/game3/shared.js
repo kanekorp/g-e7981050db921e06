@@ -50,7 +50,7 @@
   ZS.isJumpKey = function (k) { return ZS.JUMP_KEYS.indexOf(k) >= 0; };
   ZS.SHOOT_KEYS = [' ', 'Enter'];
   ZS.isShootKey = function (k) { return ZS.SHOOT_KEYS.indexOf(k) >= 0; };
-  ZS.FIRE_GAP = 0.35;   // one splash every 0.35s everywhere: a tap is one, holding repeats at this gap
+  ZS.FIRE_GAP = 1.8;   // one splash every 1.8s everywhere: a tap is one, holding repeats at this gap
   ZS.GRACE = { coyote: 0.12, buffer: 0.12, landPad: 14 };   // seconds / seconds / px added each side of a platform when landing
   ZS.pressJump = function (p) { p.jumpBuffer = ZS.GRACE.buffer; };
   /* call once per frame BEFORE moving. Returns true when the jump should start this frame (the caller then sets vy and onGround=false). */
