@@ -66,7 +66,7 @@ const scenEl3 = document.getElementById('scen3');
 const hints3 = { dodge: 0, donut: 0 };                               // 0 = not shown yet, 1 = showing, 2 = done (the hint shows once and then never again)
 const ready3 = document.getElementById('ready3'), car3 = document.getElementById('car3'), car3img = document.getElementById('car3img'), glow3 = document.getElementById('glow3'), rumbleSfx = document.getElementById('rumbleSfx'), cheerSfx = document.getElementById('cheerSfx');
 const l3Calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const state3 = { phase: 'ready', clock: 0, lane: 1, laneX: 0, pose: 'run', slideFrom: 0, slideT: 1, T: 0, items: [], gems: 0, trips: 0, jumpT: -1, stumbleT: -1, lava: 0, caughtT: 0, caughtFrom: 0, caughtTo: 0, hop: 0, scen: 0, invuln: 0, tripGuard: 0, catches: 0, fin: 0, lastHop: 0, glowT: 0, boostK: 1, boostT: 0, boostE: 0, zoomT: 0, spkT: 0, donut: null, eruptT: 9, glowE: 0, eruptBig: false, shakeX: 0, shakeY: 0, smoke: [], launches: [] };    // ready (still screen, waiting for Enter) -> run -> finish
+const state3 = { phase: 'ready', clock: 0, lane: 1, laneX: 0, pose: 'run', slideFrom: 0, slideT: 1, T: 0, items: [], gems: 0, trips: 0, jumpT: -1, stumbleT: -1, lava: 0, caughtT: 0, caughtFrom: 0, caughtTo: 0, hop: 0, scen: 0, invuln: 0, tripGuard: 0, catches: 0, fin: 0, lastHop: 0, glowT: 0, boostK: 1, boostT: 0, boostE: 0, zoomT: 0, spkT: 0, donut: null, eruptT: 9, glowE: 0, eruptBig: false, shakeX: 0, shakeY: 0, smoke: [], launches: [], splashes: [], sprayCd: 0 };    // ready (still screen, waiting for Space or Enter) -> run -> finish
 
 function item3Lane(l) { return Math.max(0, Math.min(L3_CFG.laneCount - 1, l + Math.round((L3_CFG.laneCount - 3) / 2))); }   // the list's 3 lanes sit in the middle of the lanes
 function item3At(it) { return it.slot * L3_CFG.spawnGapMs / 1000; }               // the moment (run seconds) the item reaches Zacky
@@ -905,13 +905,22 @@ function resetLevel3() {
   state3.phase = 'ready'; state3.clock = 0; state3.lane = midLane3(); state3.laneX = lane3XAt(state3.lane, L3_SZ); state3.pose = 'run'; state3.slideT = 1; state3.T = 0; state3.gems = 0; state3.trips = 0; state3.jumpT = -1; state3.stumbleT = -1;
   state3.lava = 0; state3.hop = 0; state3.invuln = 0; state3.catches = 0; state3.car = null; state3.carK = 0; state3.hopX = 0; hints3.dodge = 0; hints3.donut = 0; hint3.classList.remove('on'); state3.tripGuard = 0;
   car3.style.display = 'none'; car3img.setAttribute('src', L3_CAR_EMPTY); z3.style.visibility = 'visible'; z3.style.opacity = 1; world3.style.opacity = 1; xfStop(rumbleXF); xfStop(chaseXF); flash3.style.opacity = 0; whoops3.classList.remove('on');
+  clearSplash3(); state3.sprayCd = 0; state3.sprayN = 0;
   buildItems3(); buildLaunches3(); buildScenery3(); buildSmoke3(); hud3.set(0); xfStop(rollXF); state3.eruptT = 9; state3.glowE = 0; state3.shakeX = state3.shakeY = 0;
   ready3.style.display = 'block';
+  state3.readyAt = performance.now() / 1000;
   drawZacky3(0);
 }
+const READY_AUTO_S = 3;                                           // start the run on its own if no key comes
+function readyCanStart3() {
+  return stage === 'level3' && state3.phase === 'ready' && !screenLocked && !clipCrossfading;
+}
 function beginRun3() {
+  if (state3.phase !== 'ready') return;
+  if (clipCrossfading || screenLocked) return;
   state3.phase = 'run';
   ready3.style.display = 'none';
+  if (typeof lockDiscreteInput === 'function') lockDiscreteInput();
   playMusic(chaseMusic); xfAttach(chaseXF, 0.5);                      // the chase tune loops with a crossfade (no gap)
   if (audioUnlocked) xfStart(rumbleXF, l3Vol(L3_CFG.rumbleVolume));   // a loud volcano rumble, kept under the music
   state3.eruptT = 9; eruption3(true);                                  // the volcano erupts as the run starts
@@ -988,7 +997,23 @@ function updateCar3(dt) {
   updateBoost3(dt);
   state3.lava = Math.max(0, state3.lava - dt * 0.3);
 }
-function endLevel3() {                                             // level 3 complete: confetti, the gem total, Enter goes back to the title
+var finaleHeld = false, finaleReady = false, finaleKeyTimer = 0, finaleTuneTimer = 0;
+const FINALE_KEY_S = 3;
+function clearFinale3() {
+  finaleReady = false; finaleHeld = false;
+  if (finaleKeyTimer) { clearTimeout(finaleKeyTimer); finaleKeyTimer = 0; }
+  if (finaleTuneTimer) { clearTimeout(finaleTuneTimer); finaleTuneTimer = 0; }
+  var k = document.getElementById('finaleKey');
+  if (k) k.classList.remove('on');
+}
+function finaleMusic() {                                           // cheer first, then the title tune (also a timeout if the cheer cannot play)
+  if (stage !== 'celebrate3') return;
+  if (currentMusic !== titleMusic) playMusic(titleMusic);
+}
+cheerSfx.addEventListener('ended', finaleMusic);
+document.addEventListener('keyup', function (e) { if (e.key === ' ') finaleHeld = false; });
+window.addEventListener('blur', function () { finaleHeld = false; });
+function endLevel3() {                                             // finale: Ali's end art, heading, 4 popping stars, cheer then the title tune; after 3s Enter or a fresh Space returns to the lobby
   var row = document.getElementById('gemRow3'), total = hud3.total;
   row.textContent = '';
   for (var i = 0; i < total; i++) { var im = document.createElement('img'); im.src = 'gem.png'; im.alt = ''; if (i >= state3.gems) im.className = 'miss'; row.appendChild(im); }
@@ -999,14 +1024,58 @@ function endLevel3() {                                             // level 3 co
   row.style.display = n === 0 ? 'none' : '';
   document.getElementById('count3').textContent = line;
   xfStop(rumbleXF); xfStop(rollXF); xfStop(chaseXF);
-  showScreen('celebrate3', function () { playMusic(titleMusic); });
+  clearFinale3();
+  stopMusic();
+  showScreen('celebrate3', function () {
+    sfx(cheerSfx, 0.7);
+    finaleTuneTimer = setTimeout(function () { finaleTuneTimer = 0; finaleMusic(); }, 3500);
+    finaleKeyTimer = setTimeout(function () {
+      finaleKeyTimer = 0;
+      if (stage !== 'celebrate3') return;
+      finaleHeld = !!keys[' '];                                    // a Space already held when the picture appears does not leave
+      finaleReady = true;
+      var k = document.getElementById('finaleKey');
+      if (k) k.classList.add('on');
+    }, FINALE_KEY_S * 1000);
+  });
 }
-function level3Done3Key(key) { if (key === 'Enter') startLevel3(); }      // "Press Enter to play again" really plays level 3 again (the title tune keeps playing into the ready screen)
+var LOBBY_HREF = '../';                                            // same parent landing the live cards use
+function returnToLobby() { location.assign(LOBBY_HREF); }
+function goLobbyFromFinale() {
+  if (typeof inputLocked !== 'undefined' && inputLocked) return;
+  clearFinale3();
+  if (typeof lockDiscreteInput === 'function') lockDiscreteInput();
+  returnToLobby();
+}
+function level3Done3Key(key, isRepeat) {
+  if (!finaleReady || isRepeat) return;
+  if (typeof inputLocked !== 'undefined' && inputLocked) return;
+  if (key === 'Enter') { goLobbyFromFinale(); return; }
+  if (key === ' ' && !finaleHeld) goLobbyFromFinale();
+}
 function level3Key(key, isRepeat) {
   if (state3.phase === 'car' || state3.phase === 'done') return;
-  if (state3.phase === 'ready' && key === 'Enter' && !isRepeat) beginRun3();
-  if (state3.phase === 'run' && !isRepeat && ZackyShared.isJumpKey(key)) jump3();
+  if (state3.phase === 'ready') { if (!isRepeat) beginRun3(); return; }   // any fresh key starts; a key already held is picked up in the frame
+  if (state3.phase === 'run' && !isRepeat && ZackyShared.isJumpKey(key)) jump3();          // Up only
   if (state3.phase === 'run' && !isRepeat && (key === 'ArrowLeft' || key === 'ArrowRight')) changeLane3(key === 'ArrowLeft' ? -1 : 1);
+}
+function clearSplash3() {
+  (state3.splashes || []).forEach(function (s) { if (s.el && s.el.parentNode) s.el.remove(); });
+  state3.splashes = [];
+}
+function spray3() {                                                            // V6: Space does nothing in the chase
+}
+function updateSplash3(dt) {
+  if (state3.sprayCd > 0) state3.sprayCd -= dt;
+  var u0 = road3U(L3_SZ);
+  (state3.splashes || []).slice().forEach(function (s) {
+    s.t += dt;
+    if (s.t >= 1) { if (s.el.parentNode) s.el.remove(); state3.splashes.splice(state3.splashes.indexOf(s), 1); return; }
+    var u = u0 * (1 - 0.85 * Math.min(1, s.t));                                 // recede toward the volcano
+    var sc = road3S(u), p = project3(sc, lane3Ground(s.lane)), m = sc / L3_SZ;
+    s.el.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px) scale(' + m.toFixed(4) + ') translate(-29px,-80px)';
+    s.el.style.opacity = (1 - Math.max(0, s.t - 0.7) / 0.3).toFixed(2);
+  });
 }
 function jump3() { if (state3.jumpT >= 0) return; state3.jumpT = 0; sfx(jumpSfx, 0.6); }
 function jumpH3() { if (state3.jumpT < 0) return 0; var u = Math.min(1, state3.jumpT / L3_CFG.jumpMs); return 4 * u * (1 - u) * L3_JUMP_PEAK; }
@@ -1066,6 +1135,11 @@ function l3BoostK() { return state3.boostK; }                                // 
 function level3Frame(dt) {
   state3.glowT += dt;                                                         // the crater glow pulses on every screen state
   if (!walkSfx.paused) walkSfx.pause();
+  if (state3.phase === 'ready' && readyCanStart3()) {                          // a key still held from the clip, or about 3s with no key, starts the run
+    var held = false;
+    for (var k in keys) { if (keys[k]) { held = true; break; } }
+    if (held || (state3.readyAt && performance.now() / 1000 - state3.readyAt >= READY_AUTO_S)) beginRun3();
+  }
   var T0 = state3.T;
   if (state3.phase === 'run') { state3.clock += dt * (1 + 0.5 * (state3.boostK - 1)); state3.T += dt * L3_CFG.runSpeed; }     // runSpeed 2 = the run, and the items, go twice as fast
   if (state3.phase === 'run') {
@@ -1106,4 +1180,5 @@ function level3Frame(dt) {
   drawItems3();
   drawDonut3();
   drawZacky3();
+  updateSplash3(dt);
 }

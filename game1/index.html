@@ -346,7 +346,7 @@ h1.screen-title {
     <div id="moon-text">
     <h1>Zacky Made It to the Moon! 🌕🚀</h1>
     <p>You're a super hero, Zacky!</p>
-    <p>Press ENTER to play again</p>
+    <p>Press ENTER to return to the lobby</p>
     </div>
 </div>
 
@@ -555,6 +555,20 @@ let launchCarElement = null;
 let launchZackyElement = null;
 let launchPhase = 0;
 let climbBottom = 10;
+const TOWER_LADDER_X = 504 / 1008;   // vertical shaft / ladder, centre of tower.png
+const ZACKY_BODY_X = 355 / 720;      // body centre in Zacky_stand.png (climb sprite is almost the same)
+function snapZackyToLadder() {
+    var tower = document.getElementById('tower-launch');
+    var z = launchZackyElement;
+    var stage = document.getElementById('stage');
+    if (!tower || !z || !stage || !tower.offsetWidth || !z.offsetWidth) return;
+    var ladderX = tower.offsetLeft + tower.offsetWidth * TOWER_LADDER_X;
+    var leftPx = ladderX - z.offsetWidth * ZACKY_BODY_X;
+    var pct = (leftPx / stage.offsetWidth) * 100;
+    launchZackyLeft = pct;
+    z.style.left = pct + '%';
+}
+
 
 let spaceLeft = 5;
 let spaceBottom = 10;
@@ -578,6 +592,9 @@ let inputLocked = false;
 let stageTransitioning = false;
 const INPUT_DELAY = 400;
 const TRANSITION_DELAY = 800;
+var LOBBY_HREF = '../';                                            // same parent landing the live cards use
+function returnToLobby() { location.assign(LOBBY_HREF); }
+
 
 const intro = document.getElementById('intro');
 const ground = document.getElementById('ground');
@@ -1224,8 +1241,9 @@ document.addEventListener('keydown', e => {
         return;
     }
 
-    if (e.key === 'Enter' && stage === 6) {
-        location.reload();
+    if (stage === 6 && (e.key === 'Enter' || e.key === ' ')) {
+        if (inputLocked) return;
+        returnToLobby();
         return;
     }
 
@@ -1301,8 +1319,7 @@ document.addEventListener('keydown', e => {
             }
             
             if (launchZackyLeft >= 52) {
-                launchZackyLeft = 59;  // centre 200px Zacky on the tower ladder
-                if (launchZackyElement) launchZackyElement.style.left = '59%';
+                snapZackyToLadder();
                 launchPhase = 2;
                 launchTitle.textContent = 'Press Space to Climb!';
             }
